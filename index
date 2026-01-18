@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RADAR SYSTEM | QC Monitoring</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-dark: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.7);
+  --primary: #0ea5e9; /* Sky Blue for Radar */
+  --accent: #10b981;  /* Emerald for Success */
+  --danger: #ef4444;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: rgba(255,255,255,0.1);
+  --glass: backdrop-filter: blur(12px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* LAYOUT */
+.app-container { display: flex; height: 100vh; }
+.sidebar { width: 260px; background: #020617; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem; transition: 0.3s; z-index: 50; }
+.main-content { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
+.main-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%); }
+
+/* BRANDING */
+.logo { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 3rem; display: flex; align-items: center; gap: 10px; }
+.logo i { animation: pulse 2s infinite; }
+
+/* MENU */
+.menu-item { padding: 12px 15px; border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; font-weight: 500; }
+.menu-item:hover, .menu-item.active { background: rgba(14, 165, 233, 0.15); color: var(--primary); }
+.menu-title { font-size: 0.75rem; text-transform: uppercase; color: #475569; margin: 20px 0 10px; letter-spacing: 1px; font-weight: 700; }
+
+/* DASHBOARD GRID */
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(10px); position: relative; overflow: hidden; }
+
+/* RADAR VISUALIZATION */
+.radar-box { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+.radar-circle { width: 150px; height: 150px; border: 2px solid rgba(14, 165, 233, 0.3); border-radius: 50%; position: relative; background: radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 70%); }
+.radar-scan { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(14, 165, 233, 0.5) 60deg, transparent 60deg); animation: scan 2s linear infinite; }
+.radar-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; position: absolute; top: 40px; right: 40px; box-shadow: 0 0 10px var(--danger); opacity: 0; animation: blink 2s infinite; }
+
+/* DATA TABLES */
+.table-container { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { text-align: left; padding: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; }
+td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.status-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
+.status-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+/* LIVE TERMINAL */
+.terminal { background: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1rem; border-radius: 8px; height: 150px; overflow-y: auto; color: #33ff00; border: 1px solid #333; }
+.log-line { margin-bottom: 2px; }
+
+/* BUTTONS */
+.btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #0284c7; box-shadow: 0 0 15px rgba(14,165,233,0.4); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: rgba(255,255,255,0.05); }
+
+/* ANIMATIONS */
+@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes scan { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+
+/* RESPONSIVE */
+@media(max-width: 1024px) { .grid { grid-template-columns: 1fr; } .sidebar { position: absolute; left: -260px; height: 100%; } .sidebar.open { left: 0; } }
+</style>
+</head>
+<body>
+
+<div class="main-bg"></div>
+
+<div class="app-container">
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-satellite-dish"></i> RADAR
+    </div>
+    
+    <div class="menu-title">Main Menu</div>
+    <div class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</div>
+    <div class="menu-item" onclick="switchTab('table')"><i class="fas fa-table"></i> Data Table</div>
+    
+    <div class="menu-title">Reporting</div>
+    <div class="menu-item" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDQC-015 (PDF)</div>
+    <div class="menu-item" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</div>
+    
+    <div class="menu-title">System</div>
+    <div class="menu-item" onclick="toggleSettings()"><i class="fas fa-sliders-h"></i> Settings</div>
+    
+    <div style="margin-top: auto;">
+      <div class="card" style="padding: 10px; background: rgba(0,0,0,0.3);">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Current Line</div>
+        <div style="font-weight: 800; font-size: 1.2rem; color: var(--primary);" id="dispLine">LINE 16</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 5px;">Shift 1 • Regu A</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <h2 style="font-weight: 800; font-size: 1.8rem;">Monitoring Berat Mi</h2>
+        <p style="color: var(--text-muted);">Real-time Quality Control System</p>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <button class="btn btn-outline" onclick="simulateData()"><i class="fas fa-sync"></i> Simulate Data</button>
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000;">QC</div>
+      </div>
+    </header>
+
+    <div id="tab-dashboard" class="grid">
+      <div class="card" style="grid-column: span 3;">
+        <div style="color: var(--text-muted); font-size: 0.9rem;">Rata-rata (Avg)</div>
+        <div style="font-size: 2.5rem; font-weight: 800; margin: 10px 0;" id="kpiAvg">85.2 g</div>
+        <div class="status-badge status-ok">NORMAL</div>
+      </div>
+      <div class="card" style="grid-column: span 3;">
+        <div style="color: var(--text-muted); font-size: 0.9rem;">Total Reject</div>
+        <div style="font-size: 2.5rem; font-weight: 800; margin: 10px 0; color: var(--danger);" id="kpiReject">0</div>
+        <div style="font-size: 0.8rem; opacity: 0.7;">Pcs hari ini</div>
+      </div>
+      
+      <div class="card" style="grid-column: span 6; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <h3 style="margin-bottom: 0.5rem;">RADAR STATUS</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Scanning 8 Lines...</p>
+          <div style="margin-top: 1rem; font-family: 'JetBrains Mono'; color: var(--primary);">
+            ACTIVE LINE: <span id="radarLine">1</span><br>
+            SIGNAL: STRONG
+          </div>
+        </div>
+        <div class="radar-box">
+          <div class="radar-circle">
+            <div class="radar-scan"></div>
+            <div class="radar-dot" id="radarDot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: span 8; height: 350px;">
+        <h3 style="margin-bottom: 1rem;">Tren Berat (X-Bar Chart)</h3>
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="card" style="grid-column: span 4; height: 350px;">
+        <h3 style="margin-bottom: 1rem;">Live Terminal</h3>
+        <div class="terminal" id="terminalLog">
+          <div class="log-line">[SYSTEM] RADAR V1.0 Initialized...</div>
+          <div class="log-line">[CONN] Connecting to ESP32...</div>
+          <div class="log-line">[CONN] Connected. Waiting for batch...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-table" class="card" style="display: none;">
+      <h3 style="margin-bottom: 1.5rem;">Data Harian (Log Sheet)</h3>
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Jam</th>
+              <th>Jalur</th>
+              <th>Sampel (gram)</th>
+              <th>Avg</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// --- KONFIGURASI SISTEM ---
+const CONFIG = {
+  std: 85.0,
+  tol: 2.0, // Toleransi +/- 2 gram
+  line: "16",
+  shift: "1",
+  regu: "A"
+};
+
+// --- STATE MANAGEMENT ---
+let appData = {
+  samples: [], // Menyimpan semua batch data
+  currentBatch: []
+};
+
+// --- INIT ---
+document.addEventListener('DOMContentLoaded', () => {
+  initChart();
+  log("System Ready. Waiting for input...");
+  updateKPI();
+});
+
+// --- FUNGSI UTAMA ---
+
+function switchTab(tabName) {
+  document.getElementById('tab-dashboard').style.display = tabName === 'dashboard' ? 'grid' : 'none';
+  document.getElementById('tab-table').style.display = tabName === 'table' ? 'block' : 'none';
+  
+  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+function log(msg) {
+  const term = document.getElementById('terminalLog');
+  const time = new Date().toLocaleTimeString('id-ID');
+  term.innerHTML += `<div class="log-line"><span style="opacity:0.5">[${time}]</span> ${msg}</div>`;
+  term.scrollTop = term.scrollHeight;
+}
+
+// --- CHART.JS ---
+let mainChart;
+function initChart() {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Rata-rata Berat',
+        data: [],
+        borderColor: '#0ea5e9',
+        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#fff'
+      },
+      {
+        label: 'Batas Atas',
+        data: [],
+        borderColor: '#ef4444',
+        borderDash: [5, 5],
+        borderWidth: 1,
+        pointRadius: 0
+      },
+      {
+        label: 'Batas Bawah',
+        data: [],
+        borderColor: '#ef4444',
+        borderDash: [5, 5],
+        borderWidth: 1,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: false, min: 80, max: 90, grid: { color: 'rgba(255,255,255,0.05)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// --- SIMULASI DATA MASUK (PENGGANTI ESP32) ---
+function simulateData() {
+  // Simulasi menerima batch 20 data dari ESP32
+  // Format: Jalur 1-8 acak, Berat 83-87
+  let newBatch = {
+    id: Date.now(),
+    timestamp: new Date(),
+    jam: new Date().getHours(),
+    raw: []
+  };
+
+  log("RECEIVING BATCH DATA...");
+  
+  // Buat 10 data sampel untuk display tabel (Asumsi form pakai 10 kolom)
+  // Walaupun sampling 20, kita ambil rata-rata per subgroup atau tampilkan 10 pertama
+  // Untuk simulasi ini kita buat 10 data representatif
+  let sum = 0;
+  let min = 100;
+  let max = 0;
+  let rejectCount = 0;
+
+  for(let i=0; i<10; i++) {
+    let w = (Math.random() * (87 - 83) + 83).toFixed(1);
+    // Kadang buat reject
+    if(Math.random() > 0.9) w = 82.0; 
+    
+    newBatch.raw.push(parseFloat(w));
+    sum += parseFloat(w);
+    if(w < min) min = w;
+    if(w > max) max = w;
+    
+    // Cek Reject
+    if(w > (CONFIG.std + CONFIG.tol) || w < (CONFIG.std - CONFIG.tol)) rejectCount++;
+  }
+
+  newBatch.avg = (sum / 10).toFixed(1);
+  newBatch.min = min;
+  newBatch.max = max;
+  newBatch.reject = rejectCount;
+  newBatch.status = rejectCount > 0 ? "REJECT" : "OK";
+
+  appData.samples.push(newBatch);
+  
+  // Update UI
+  updateChart(newBatch);
+  updateTable(newBatch);
+  updateKPI();
+  log(`BATCH PROCESSED. AVG: ${newBatch.avg}g | REJ: ${rejectCount}`);
+  
+  // Efek Radar
+  document.getElementById('radarLine').innerText = Math.floor(Math.random() * 8) + 1;
+  if(rejectCount > 0) {
+    document.getElementById('radarDot').style.opacity = 1;
+    setTimeout(() => document.getElementById('radarDot').style.opacity = 0, 3000);
+  }
+}
+
+function updateChart(batch) {
+  const timeLabel = batch.timestamp.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  mainChart.data.labels.push(timeLabel);
+  mainChart.data.datasets[0].data.push(batch.avg);
+  mainChart.data.datasets[1].data.push(CONFIG.std + CONFIG.tol);
+  mainChart.data.datasets[2].data.push(CONFIG.std - CONFIG.tol);
+  
+  if(mainChart.data.labels.length > 10) {
+    mainChart.data.labels.shift();
+    mainChart.data.datasets.forEach(ds => ds.data.shift());
+  }
+  mainChart.update();
+}
+
+function updateTable(batch) {
+  const tbody = document.querySelector('#dataTable tbody');
+  const row = `
+    <tr>
+      <td>${batch.timestamp.toLocaleTimeString()}</td>
+      <td>All (1-8)</td>
+      <td>${batch.raw.join(', ')}</td>
+      <td style="font-weight:bold; color:var(--primary)">${batch.avg}</td>
+      <td>${batch.min}</td>
+      <td>${batch.max}</td>
+      <td><span class="status-badge ${batch.status === 'OK' ? 'status-ok' : 'status-ng'}">${batch.status}</span></td>
+    </tr>
+  `;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+function updateKPI() {
+  if(appData.samples.length === 0) return;
+  const last = appData.samples[appData.samples.length - 1];
+  
+  // Hitung total reject hari ini
+  let totalRej = appData.samples.reduce((acc, curr) => acc + curr.reject, 0);
+  
+  document.getElementById('kpiAvg').innerText = last.avg + " g";
+  document.getElementById('kpiReject').innerText = totalRej;
+}
+
+// --- PDF GENERATOR (PDQC-015 EXACT REPLICA) ---
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+
+  // 1. HEADER
+  doc.setFontSize(10); doc.setFont("helvetica", "bold");
+  doc.text("PT INDOFOOD CBP SUKSES MAKMUR Tbk", 14, 10);
+  doc.setFontSize(8); doc.setFont("helvetica", "normal");
+  doc.text("DIVISI NOODLE - PABRIK CIBITUNG", 14, 15);
+  
+  doc.text("Kode Form   : PDQC - 015", 240, 10);
+  doc.text("No. Terbitan : 1.7", 240, 14);
+  
+  doc.setFontSize(14); doc.setFont("helvetica", "bold");
+  doc.text("LAPORAN MONITORING BERAT MI EX COOLING", 148, 25, {align: "center"});
+  
+  doc.setFontSize(10); doc.setFont("helvetica", "normal");
+  const dateStr = new Date().toLocaleDateString('id-ID');
+  doc.text(`Tanggal : ${dateStr}`, 14, 35);
+  doc.text(`Line       : ${CONFIG.line}`, 14, 40);
+  doc.text(`Shift       : ${CONFIG.shift}`, 120, 35);
+  doc.text(`Regu       : ${CONFIG.regu}`, 120, 40);
+
+  doc.text(`Std: ${CONFIG.std}g`, 200, 35);
+  doc.text(`Tol: +/- ${CONFIG.tol}g`, 200, 40);
+
+  // 2. DATA TABLE
+  // Mapping data to PDQC format
+  // Kolom: Jam | Sampel | 1..10 | Rata2 | Reject
+  
+  let bodyData = [];
+  appData.samples.forEach(batch => {
+    let rowBerat = [
+      batch.timestamp.getHours() + ":00", // Jam (I, II, III..)
+      "20", // Sampel Size
+      ...batch.raw, // Data 1-10
+      batch.avg, // Rata-rata
+      batch.reject // Reject
+    ];
+    bodyData.push(rowBerat);
+    // Baris kosong (spasi antar jam)
+    bodyData.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '']); 
+  });
+
+  doc.autoTable({
+    startY: 45,
+    head: [[
+      {content: 'Jam', rowSpan: 2, styles: {valign: 'middle', halign: 'center'}},
+      {content: 'Sampel', rowSpan: 2, styles: {valign: 'middle', halign: 'center'}},
+      {content: 'DATA PENIMBANGAN (gram)', colSpan: 10, styles: {halign: 'center'}},
+      {content: 'Rata-rata', rowSpan: 2, styles: {valign: 'middle', halign: 'center'}},
+      {content: 'Reject', rowSpan: 2, styles: {valign: 'middle', halign: 'center'}}
+    ], [
+      '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'
+    ]],
+    body: bodyData,
+    theme: 'plain', // Agar mirip tabel manual
+    styles: { 
+      fontSize: 8, 
+      cellPadding: 2, 
+      lineColor: [0, 0, 0], 
+      lineWidth: 0.1,
+      textColor: [0,0,0]
+    },
+    headStyles: { 
+      fillColor: [255, 255, 255], 
+      textColor: [0, 0, 0], 
+      fontStyle: 'bold',
+      lineWidth: 0.2
+    },
+    columnStyles: {
+      0: {cellWidth: 15}, 
+      1: {cellWidth: 15}
+    }
+  });
+
+  // 3. FOOTER & TTD
+  let finalY = doc.lastAutoTable.finalY + 10;
+  
+  // Box Keterangan
+  doc.setLineWidth(0.1);
+  doc.rect(14, finalY, 150, 20);
+  doc.setFontSize(8);
+  doc.text("Keterangan:", 16, finalY + 5);
+  doc.text("Semua data telah diverifikasi oleh sistem RADAR.", 16, finalY + 10);
+  
+  // TTD Area
+  const sigY = finalY + 5;
+  doc.text("Dibuat oleh,", 180, sigY);
+  doc.text("Mengetahui,", 230, sigY);
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("( QC Press Field )", 180, sigY + 25);
+  doc.text("( QC Proc. Sect. Spv )", 230, sigY + 25);
+
+  doc.save(`PDQC-015_${dateStr}.pdf`);
+  Swal.fire("Berhasil", "Laporan PDQC-015 telah diunduh.", "success");
+}
+
+// --- EXCEL GENERATOR ---
+function exportExcel() {
+  if(appData.samples.length === 0) {
+    Swal.fire("Data Kosong", "Belum ada data untuk diexport", "warning");
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  
+  // Header Info
+  let wsData = [
+    ["PT INDOFOOD CBP SUKSES MAKMUR Tbk"],
+    ["LAPORAN MONITORING BERAT MI"],
+    [""],
+    ["Tanggal", new Date().toLocaleDateString()],
+    ["Line", CONFIG.line],
+    ["Shift", CONFIG.shift],
+    [""],
+    ["Jam", "Sampel 1", "Sampel 2", "Sampel 3", "Sampel 4", "Sampel 5", "Sampel 6", "Sampel 7", "Sampel 8", "Sampel 9", "Sampel 10", "Rata-rata", "Min", "Max", "Status"]
+  ];
+
+  // Body Data
+  appData.samples.forEach(b => {
+    wsData.push([
+      b.timestamp.toLocaleTimeString(),
+      b.raw[0], b.raw[1], b.raw[2], b.raw[3], b.raw[4], 
+      b.raw[5], b.raw[6], b.raw[7], b.raw[8], b.raw[9],
+      b.avg, b.min, b.max, b.status
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, "Laporan QC");
+  XLSX.writeFile(wb, "RADAR_Report.xlsx");
+}
+
+function toggleSettings() {
+  Swal.fire({
+    title: 'Settings',
+    html: `
+      <input id="swal-line" class="swal2-input" placeholder="Line (e.g. 16)" value="${CONFIG.line}">
+      <input id="swal-std" class="swal2-input" placeholder="Standar (e.g. 85.0)" value="${CONFIG.std}">
+    `,
+    focusConfirm: false,
+    preConfirm: () => {
+      return [
+        document.getElementById('swal-line').value,
+        document.getElementById('swal-std').value
+      ]
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      CONFIG.line = result.value[0];
+      CONFIG.std = parseFloat(result.value[1]);
+      document.getElementById('dispLine').innerText = "LINE " + CONFIG.line;
+      Swal.fire('Saved!', 'Settings updated.', 'success');
+    }
+  })
+}
+
+</script>
+</body>
+</html>
