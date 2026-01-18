@@ -3,426 +3,586 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADAR SYSTEM | QC Monitoring</title>
+<title>RADAR V2.0 PRO | Industrial SPC System</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --bg-dark: #0f172a;
+  --bg-body: #0f172a;
+  --bg-panel: #1e293b;
   --bg-card: rgba(30, 41, 59, 0.7);
-  --primary: #0ea5e9;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #3b82f6;
   --accent: #10b981;
   --danger: #ef4444;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
+  --warning: #f59e0b;
   --border: rgba(255,255,255,0.1);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+[data-theme="light"] {
+  --bg-body: #f1f5f9;
+  --bg-panel: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(0,0,0,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; transition: background 0.3s, color 0.3s; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
 /* LAYOUT */
-.app-container { display: flex; height: 100vh; }
-.sidebar { width: 260px; background: #020617; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem; z-index: 50; }
-.main-content { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
-.main-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%); }
+.sidebar { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; z-index: 20; box-shadow: var(--shadow); }
+.main { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
+.backdrop { position: fixed; inset: 0; z-index: -1; opacity: 0.5; background: radial-gradient(circle at 80% 20%, var(--primary) 0%, transparent 20%), radial-gradient(circle at 10% 80%, var(--accent) 0%, transparent 20%); filter: blur(80px); }
 
-/* LOGO & MENU */
-.logo { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
-.menu-item { padding: 12px 15px; border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; font-weight: 500; }
-.menu-item:hover, .menu-item.active { background: rgba(14, 165, 233, 0.15); color: var(--primary); }
-.menu-title { font-size: 0.75rem; text-transform: uppercase; color: #475569; margin: 20px 0 10px; letter-spacing: 1px; font-weight: 700; }
+/* COMPONENTS */
+.logo { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
+.nav-item { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 10px; }
+.nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+.nav-section { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin: 20px 0 10px; font-weight: 700; letter-spacing: 1px; }
 
-/* GRID & CARDS */
-.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; }
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(10px); position: relative; }
+.grid-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px); box-shadow: var(--shadow); }
+.col-span-1 { grid-column: span 1; } .col-span-2 { grid-column: span 2; } .col-span-3 { grid-column: span 3; } .col-span-4 { grid-column: span 4; }
+
+/* KPI VALUES */
+.kpi-value { font-size: 2.2rem; font-weight: 800; line-height: 1.2; }
+.kpi-label { font-size: 0.85rem; color: var(--text-muted); }
+.badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+.badge-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
+.badge-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
 /* RADAR ANIMATION */
-.radar-box { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.radar-circle { width: 120px; height: 120px; border: 2px solid rgba(14, 165, 233, 0.3); border-radius: 50%; position: relative; background: radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 70%); }
-.radar-scan { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(14, 165, 233, 0.5) 60deg, transparent 60deg); animation: scan 2s linear infinite; }
+.radar-wrapper { width: 100px; height: 100px; position: relative; display: flex; justify-content: center; align-items: center; }
+.radar-ring { position: absolute; border: 2px solid var(--primary); border-radius: 50%; opacity: 0.3; }
+.r1 { width: 100%; height: 100%; } .r2 { width: 66%; height: 66%; } .r3 { width: 33%; height: 33%; }
+.radar-sweep { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(transparent 270deg, var(--primary)); animation: sweep 2s linear infinite; opacity: 0.3; }
+@keyframes sweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* TABLE & TERMINAL */
-.table-container { overflow-x: auto; }
+/* TABLE */
 table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
-th { color: var(--text-muted); font-weight: 600; }
-.status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
-.status-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
-.status-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-.terminal { background: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; padding: 1rem; border-radius: 8px; height: 200px; overflow-y: auto; color: #33ff00; border: 1px solid #333; }
+th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); color: var(--text-muted); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+tr:hover td { background: rgba(255,255,255,0.03); }
 
 /* BUTTONS */
-.btn { padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: #0284c7; }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-.btn-outline:hover { background: rgba(255,255,255,0.05); }
+.btn { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+.btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-@keyframes scan { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* HEATMAP GRID */
+.heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 10px; }
+.lane-box { aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+.lane-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); border-color: var(--accent); }
+.lane-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); border-color: var(--danger); }
 </style>
 </head>
 <body>
 
-<div class="main-bg"></div>
+<div class="backdrop"></div>
 
-<div class="app-container">
-  <aside class="sidebar">
-    <div class="logo"><i class="fas fa-satellite-dish"></i> RADAR</div>
-    
-    <div class="menu-title">Menu</div>
-    <div class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</div>
-    <div class="menu-item" onclick="switchTab('table')"><i class="fas fa-table"></i> Data Log</div>
-    
-    <div class="menu-title">Export</div>
-    <div class="menu-item" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Laporan PDF</div>
-    <div class="menu-item" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Laporan Excel</div>
-    
-    <div class="menu-title">System</div>
-    <div class="menu-item" onclick="toggleSettings()"><i class="fas fa-sliders-h"></i> Settings</div>
-    
-    <div style="margin-top: auto;">
-      <div class="card" style="padding: 12px; background: rgba(0,0,0,0.3);">
-        <div style="font-size: 0.7rem; color: var(--text-muted);">Active Flavour</div>
-        <div style="font-weight: 700; font-size: 0.9rem; color: var(--accent); margin-bottom:5px;" id="dispFlavor">GSS-USA 6x5 DPL</div>
-        <div style="font-size: 0.7rem; color: var(--text-muted); border-top:1px solid rgba(255,255,255,0.1); padding-top:5px;">
-          Std: <span id="dispStd">70</span>g | Tol: ±<span id="dispTol">3</span>g
-        </div>
+<nav class="sidebar">
+  <div class="logo">
+    <div class="radar-wrapper" style="width:30px; height:30px;">
+      <div class="radar-sweep"></div>
+    </div>
+    RADAR <span style="font-size:0.6em; color:var(--accent); margin-top:5px; margin-left:5px;">V2.0 PRO</span>
+  </div>
+
+  <div class="nav-section">Main Menu</div>
+  <div class="nav-item active" onclick="app.setTab('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</div>
+  <div class="nav-item" onclick="app.setTab('analytics')"><i class="fas fa-chart-bar"></i> SPC Analytics</div>
+  <div class="nav-item" onclick="app.setTab('data')"><i class="fas fa-database"></i> Database</div>
+
+  <div class="nav-section">Export</div>
+  <div class="nav-item" onclick="app.exportPDF()"><i class="fas fa-file-pdf"></i> Laporan PDQC</div>
+  <div class="nav-item" onclick="app.exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</div>
+
+  <div class="nav-section">System</div>
+  <div class="nav-item" onclick="app.toggleTheme()"><i class="fas fa-adjust"></i> Toggle Theme</div>
+  <div class="nav-item" onclick="app.settings()"><i class="fas fa-cog"></i> Settings</div>
+  <div class="nav-item" onclick="app.resetData()" style="color:var(--danger)"><i class="fas fa-trash"></i> Reset Data</div>
+
+  <div style="margin-top: auto;">
+    <div class="card" style="padding:15px; font-size:0.8rem;">
+      <div style="color:var(--text-muted)">Active Flavour</div>
+      <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;" id="dispFlavor">Loading...</div>
+      <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); paddingTop:5px;">
+        <span>Std: <b id="dispStd">--</b>g</span>
+        <span>Tol: ±<b id="dispTol">--</b>g</span>
       </div>
     </div>
-  </aside>
+  </div>
+</nav>
 
-  <main class="main-content">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-      <div>
-        <h2 style="font-weight: 800; font-size: 1.5rem;">QC Monitoring Dashboard</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Real-time Sampling System</p>
-      </div>
-      <button class="btn btn-primary" onclick="simulateData()"><i class="fas fa-sync"></i> Simulate 20 Samples</button>
-    </header>
+<main class="main">
+  
+  <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+    <div>
+      <h1 style="font-size:1.8rem; font-weight:800;">Production Monitor</h1>
+      <div style="color:var(--text-muted);">Real-time QC Sampling & Analysis</div>
+    </div>
+    <div style="display:flex; gap:1rem;">
+      <button class="btn btn-outline" onclick="app.simulate()"><i class="fas fa-satellite-dish"></i> SCAN BATCH (20)</button>
+    </div>
+  </header>
 
-    <div id="tab-dashboard" class="grid">
-      <div class="card" style="grid-column: span 3;">
-        <div style="color: var(--text-muted); font-size: 0.8rem;">Rata-rata Batch Ini</div>
-        <div style="font-size: 2rem; font-weight: 800; margin: 5px 0;" id="kpiAvg">--</div>
-        <div class="status-badge status-ok" id="kpiStatus">WAITING</div>
-      </div>
-      <div class="card" style="grid-column: span 3;">
-        <div style="color: var(--text-muted); font-size: 0.8rem;">Pola Sampling</div>
-        <div style="font-size: 1.5rem; font-weight: 800; margin: 5px 0; color: var(--primary);" id="dispPattern">--</div>
-        <div style="font-size: 0.7rem; opacity: 0.7;">Jalur 1-8</div>
-      </div>
-
-      <div class="card" style="grid-column: span 6; display: flex; align-items: center; justify-content: space-between;">
-        <div>
-          <h3>RADAR SCANNING</h3>
-          <p style="color: var(--text-muted); font-size: 0.8rem; margin-top:5px;">Mengambil 20 data dari 8 jalur...</p>
-        </div>
-        <div class="radar-box"><div class="radar-circle"><div class="radar-scan"></div></div></div>
-      </div>
-
-      <div class="card" style="grid-column: span 8; height: 320px;">
-        <canvas id="mainChart"></canvas>
-      </div>
-
-      <div class="card" style="grid-column: span 4; height: 320px;">
-        <div style="margin-bottom:10px; font-weight:bold;">Live Data Stream</div>
-        <div class="terminal" id="terminalLog">
-          <div style="opacity:0.5">> System Initialized...</div>
-          <div style="opacity:0.5">> Std: 70g (67-73g)</div>
-        </div>
-      </div>
+  <div id="view-dashboard" class="grid-dashboard">
+    <div class="card col-span-1">
+      <div class="kpi-label">Current Average</div>
+      <div class="kpi-value" id="kpiAvg">--</div>
+      <span class="badge" id="kpiStatus">WAITING</span>
+    </div>
+    <div class="card col-span-1">
+      <div class="kpi-label">Process Capability (Cpk)</div>
+      <div class="kpi-value" id="kpiCpk">--</div>
+      <div style="font-size:0.75rem; color:var(--text-muted)">Target > 1.33</div>
+    </div>
+    <div class="card col-span-1">
+      <div class="kpi-label">Total Reject (Shift)</div>
+      <div class="kpi-value" style="color:var(--danger)" id="kpiReject">0</div>
+      <div style="font-size:0.75rem;">Pieces</div>
+    </div>
+    <div class="card col-span-1">
+      <div class="kpi-label">Sampling Pattern</div>
+      <div style="font-size:1.2rem; font-weight:bold; margin-top:5px; color:var(--warning)" id="dispPattern">--</div>
+      <div style="font-size:0.75rem; opacity:0.7;">Dynamic Rotation</div>
     </div>
 
-    <div id="tab-table" class="card" style="display: none;">
-      <h3>Data Log (Batch 20 Samples)</h3>
-      <div class="table-container">
-        <table id="dataTable">
-          <thead>
-            <tr>
-              <th>Jam</th>
-              <th>Pola</th>
-              <th>Detail 20 Data (Line:Berat)</th>
-              <th>Avg</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <div class="card col-span-3" style="height:350px;">
+      <h3 style="margin-bottom:1rem;">X-Bar Chart (Weight Trend)</h3>
+      <canvas id="chartTrend"></canvas>
     </div>
 
-  </main>
-</div>
+    <div class="card col-span-1" style="height:350px;">
+      <h3 style="margin-bottom:0.5rem;">Lane Heatmap</h3>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Avg Weight per Lane</p>
+      <div id="laneHeatmap" class="heatmap">
+        </div>
+      <div style="margin-top:1rem; font-size:0.7rem; color:var(--text-muted); text-align:center;">
+        Merah = Rata-rata menyimpang jauh
+      </div>
+    </div>
+  </div>
+
+  <div id="view-analytics" class="grid-dashboard" style="display:none;">
+    <div class="card col-span-2" style="height:400px;">
+      <h3>Histogram (Bell Curve)</h3>
+      <canvas id="chartHisto"></canvas>
+    </div>
+    <div class="card col-span-2">
+      <h3>Six Sigma Metrics</h3>
+      <table style="margin-top:1rem;">
+        <tr><td>Standard Deviation (σ)</td><td style="font-weight:bold; text-align:right;" id="statSigma">--</td></tr>
+        <tr><td>Process Capability (Cp)</td><td style="font-weight:bold; text-align:right;" id="statCp">--</td></tr>
+        <tr><td>Capability Index (Cpk)</td><td style="font-weight:bold; text-align:right;" id="statCpk">--</td></tr>
+        <tr><td>Min Weight</td><td style="font-weight:bold; text-align:right;" id="statMin">--</td></tr>
+        <tr><td>Max Weight</td><td style="font-weight:bold; text-align:right;" id="statMax">--</td></tr>
+        <tr><td>Range (Max-Min)</td><td style="font-weight:bold; text-align:right;" id="statRange">--</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-data" class="card col-span-4" style="display:none;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+      <h3>Recorded Batches</h3>
+      <span class="badge badge-ok" id="dbCount">0 Records</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Hour</th>
+            <th>Pattern</th>
+            <th>Avg</th>
+            <th>Status</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
 
 <script>
-// --- KONFIGURASI ---
-let CONFIG = {
-  flavor: "GSS-USA 6x5 DPL",
-  std: 70.0,
-  tol: 3.0,
-  line: "16",
-  shift: "1"
-};
+const app = {
+  // STATE & CONFIG
+  config: {
+    flavor: "GSS-USA 6x5 DPL",
+    std: 70.0,
+    tol: 3.0,
+    line: "16",
+    shift: "1",
+    regu: "A"
+  },
+  data: [], // Persistent Data
+  charts: {},
 
-let appData = {
-  samples: [],
-  hourCounter: 1 // Mulai Jam ke-1
-};
+  // INIT
+  init: () => {
+    // Load from LocalStorage
+    const savedConfig = localStorage.getItem('radar_config');
+    const savedData = localStorage.getItem('radar_data');
+    if (savedConfig) app.config = JSON.parse(savedConfig);
+    if (savedData) app.data = JSON.parse(savedData);
 
-// --- INIT ---
-document.addEventListener('DOMContentLoaded', () => {
-  initChart();
-  updateConfigUI();
-});
-
-function updateConfigUI() {
-  document.getElementById('dispFlavor').innerText = CONFIG.flavor;
-  document.getElementById('dispStd').innerText = CONFIG.std;
-  document.getElementById('dispTol').innerText = CONFIG.tol;
-}
-
-function switchTab(tab) {
-  document.getElementById('tab-dashboard').style.display = tab === 'dashboard' ? 'grid' : 'none';
-  document.getElementById('tab-table').style.display = tab === 'table' ? 'block' : 'none';
-  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-}
-
-function log(msg) {
-  const term = document.getElementById('terminalLog');
-  term.innerHTML += `<div>> ${msg}</div>`;
-  term.scrollTop = term.scrollHeight;
-}
-
-// --- CHART ---
-let mainChart;
-function initChart() {
-  const ctx = document.getElementById('mainChart').getContext('2d');
-  mainChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: [],
-      datasets: [
-        { label: 'Rata-rata', data: [], borderColor: '#0ea5e9', tension: 0.4 },
-        { label: 'Max (73g)', data: [], borderColor: '#ef4444', borderDash: [5,5], pointRadius:0 },
-        { label: 'Min (67g)', data: [], borderColor: '#ef4444', borderDash: [5,5], pointRadius:0 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { min: 65, max: 75 }, x: { display: false } }
-    }
-  });
-}
-
-// --- SIMULASI CERDAS (ROTASI SAMPLING) ---
-function simulateData() {
-  const isOddHour = appData.hourCounter % 2 !== 0; // Ganjil (1,3,5) vs Genap (2,4,6)
-  
-  // LOGIKA ROTASI
-  // Ganjil: Jalur 1-4 (3 sample), Jalur 5-8 (2 sample)
-  // Genap : Jalur 1-4 (2 sample), Jalur 5-8 (3 sample)
-  const patternName = isOddHour ? "POLA A (3-3-3-3 | 2-2-2-2)" : "POLA B (2-2-2-2 | 3-3-3-3)";
-  const counts = isOddHour ? [3,3,3,3,2,2,2,2] : [2,2,2,2,3,3,3,3];
-  
-  let batchData = {
-    id: Date.now(),
-    hour: appData.hourCounter,
-    pattern: patternName,
-    raw: [], // Menyimpan {line: 1, weight: 70.1}
-    flatWeights: [] // Hanya berat untuk perhitungan
-  };
-
-  log(`Start Batch Jam ${appData.hourCounter} - ${patternName}`);
-
-  // Generate 20 Data
-  for (let lane = 0; lane < 8; lane++) {
-    let sampleCount = counts[lane];
-    for (let s = 0; s < sampleCount; s++) {
-      // Random weight 68.5 - 71.5 (Normal) sesekali outlier
-      let noise = (Math.random() - 0.5) * 3; // +/- 1.5g variasi
-      let w = (CONFIG.std + noise).toFixed(1);
-      
-      // Simpan
-      batchData.raw.push({ line: lane + 1, weight: w });
-      batchData.flatWeights.push(parseFloat(w));
-    }
-  }
-
-  // Hitung Statistik
-  let sum = batchData.flatWeights.reduce((a, b) => a + b, 0);
-  batchData.avg = (sum / 20).toFixed(1);
-  batchData.status = (batchData.avg >= (CONFIG.std - CONFIG.tol) && batchData.avg <= (CONFIG.std + CONFIG.tol)) ? "OK" : "REJECT";
-
-  // Simpan ke Memori Aplikasi
-  appData.samples.push(batchData);
-  appData.hourCounter++;
-
-  // Update UI
-  updateDashboard(batchData);
-  updateTable(batchData);
-}
-
-function updateDashboard(batch) {
-  document.getElementById('kpiAvg').innerText = batch.avg + " g";
-  const badge = document.getElementById('kpiStatus');
-  badge.innerText = batch.status;
-  badge.className = `status-badge ${batch.status === 'OK' ? 'status-ok' : 'status-ng'}`;
-  document.getElementById('dispPattern').innerText = batch.pattern.split('(')[0];
-
-  // Update Chart
-  mainChart.data.labels.push(`Jam ${batch.hour}`);
-  mainChart.data.datasets[0].data.push(batch.avg);
-  mainChart.data.datasets[1].data.push(CONFIG.std + CONFIG.tol);
-  mainChart.data.datasets[2].data.push(CONFIG.std - CONFIG.tol);
-  
-  if (mainChart.data.labels.length > 10) {
-    mainChart.data.labels.shift();
-    mainChart.data.datasets.forEach(d => d.data.shift());
-  }
-  mainChart.update();
-  
-  log(`Batch Complete. Avg: ${batch.avg}g | Status: ${batch.status}`);
-}
-
-function updateTable(batch) {
-  const tbody = document.querySelector('#dataTable tbody');
-  // Format string data mentah agar ringkas: "L1:70.1, L1:70.2..."
-  let detailStr = batch.raw.map(d => `L${d.line}:${d.weight}`).join(', ');
-  
-  const row = `
-    <tr>
-      <td>${batch.hour}</td>
-      <td>${batch.pattern.split('(')[1].replace(')','')}</td>
-      <td style="font-size:0.75rem; color:#aaa;">${detailStr}</td>
-      <td style="font-weight:bold; color:var(--primary)">${batch.avg}</td>
-      <td><span class="status-badge ${batch.status === 'OK' ? 'status-ok' : 'status-ng'}">${batch.status}</span></td>
-    </tr>
-  `;
-  tbody.insertAdjacentHTML('afterbegin', row);
-}
-
-// --- PDF EXPORT (PDQC-015 UPDATED) ---
-function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('l', 'mm', 'a4');
-
-  // HEADER
-  doc.setFontSize(10); doc.setFont("helvetica", "bold");
-  doc.text("PT INDOFOOD CBP SUKSES MAKMUR Tbk", 14, 10);
-  doc.setFontSize(8); doc.setFont("helvetica", "normal");
-  doc.text("DIVISI NOODLE - PABRIK CIBITUNG", 14, 15);
-  doc.text("Kode Form: PDQC-015", 250, 10);
-
-  doc.setFontSize(14); doc.setFont("helvetica", "bold");
-  doc.text("LAPORAN MONITORING BERAT MI EX COOLING", 148, 25, {align: "center"});
-
-  doc.setFontSize(10); doc.setFont("helvetica", "normal");
-  doc.text(`Tanggal: ${new Date().toLocaleDateString()}`, 14, 35);
-  doc.text(`Flavour: ${CONFIG.flavor}`, 14, 40); // New Feature
-  doc.text(`Standar: ${CONFIG.std}g (Min ${CONFIG.std - CONFIG.tol} - Max ${CONFIG.std + CONFIG.tol})`, 200, 35);
-
-  // DATA MAPPING (20 Raw Data listed sequentially)
-  let bodyData = [];
-  appData.samples.forEach(b => {
-    // Karena tabel kertas terbatas, kita tampilkan 20 data dalam string atau array panjang
-    // Disini kita tampilkan 10 data pertama di baris 1, 10 data sisa di baris 2
-    let row1 = [b.hour, "1-10", ...b.flatWeights.slice(0, 10), b.avg, b.status];
-    let row2 = ["", "11-20", ...b.flatWeights.slice(10, 20), "", ""];
+    app.updateUI();
+    app.initCharts();
+    app.refreshStats();
     
-    bodyData.push(row1);
-    bodyData.push(row2);
-    // Spacer
-    bodyData.push(['','','','','','','','','','','','','','']); 
-  });
+    // Check Theme
+    if (localStorage.getItem('radar_theme') === 'light') {
+      document.body.setAttribute('data-theme', 'light');
+    }
+  },
 
-  doc.autoTable({
-    startY: 45,
-    head: [[
-      {content: 'Jam', styles: {halign: 'center'}},
-      {content: 'No', styles: {halign: 'center'}},
-      {content: 'DATA BERAT (20 Sampel)', colSpan: 10, styles: {halign: 'center'}},
-      {content: 'Rata2', styles: {halign: 'center'}},
-      {content: 'Status', styles: {halign: 'center'}}
-    ]],
-    body: bodyData,
-    theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1 },
-    headStyles: { fillColor: [220, 220, 220], textColor: [0,0,0] }
-  });
+  // CORE FUNCTIONS
+  simulate: () => {
+    // Determine Pattern based on Hour Counter (Data length)
+    const hourIdx = app.data.length + 1;
+    const isOdd = hourIdx % 2 !== 0;
+    const pattern = isOdd ? "Odd (3-2)" : "Even (2-3)";
+    const counts = isOdd ? [3,3,3,3,2,2,2,2] : [2,2,2,2,3,3,3,3];
 
-  // FOOTER
-  let finalY = doc.lastAutoTable.finalY + 10;
-  doc.text("Dibuat oleh: QC Field", 20, finalY);
-  doc.text("Diketahui: SPV QC", 200, finalY);
+    let batch = {
+      id: Date.now(),
+      time: new Date(),
+      hour: hourIdx,
+      pattern: pattern,
+      raw: [],
+      flat: []
+    };
 
-  doc.save(`Laporan_RADAR_${new Date().getTime()}.pdf`);
-}
-
-// --- EXCEL EXPORT ---
-function exportExcel() {
-  if (appData.samples.length === 0) return Swal.fire("Info", "Belum ada data", "info");
-  
-  const wb = XLSX.utils.book_new();
-  let wsData = [
-    ["PT INDOFOOD CBP SUKSES MAKMUR Tbk"],
-    ["LAPORAN MONITORING BERAT MI"],
-    ["Flavour", CONFIG.flavor],
-    ["Standar", CONFIG.std, "Toleransi", CONFIG.tol],
-    [""],
-    ["Jam", "Pola", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20", "Rata-rata", "Status"]
-  ];
-
-  appData.samples.forEach(b => {
-    wsData.push([
-      b.hour, b.pattern,
-      ...b.flatWeights,
-      b.avg, b.status
-    ]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  XLSX.utils.book_append_sheet(wb, ws, "Data QC");
-  XLSX.writeFile(wb, "RADAR_Data_Log.xlsx");
-}
-
-function toggleSettings() {
-  Swal.fire({
-    title: 'System Settings',
-    html: `
-      <label>Flavour Name</label>
-      <input id="sw-flavor" class="swal2-input" value="${CONFIG.flavor}">
-      <label>Standard Weight (g)</label>
-      <input id="sw-std" type="number" class="swal2-input" value="${CONFIG.std}">
-      <label>Tolerance (g)</label>
-      <input id="sw-tol" type="number" class="swal2-input" value="${CONFIG.tol}">
-    `,
-    preConfirm: () => {
-      return {
-        flavor: document.getElementById('sw-flavor').value,
-        std: parseFloat(document.getElementById('sw-std').value),
-        tol: parseFloat(document.getElementById('sw-tol').value)
+    // Generate 20 Samples
+    for(let l=0; l<8; l++) {
+      for(let k=0; k<counts[l]; k++) {
+        // Simulating Realistic Noise
+        let noise = (Math.random() - 0.5) * 2.5; 
+        // Occasional Outlier (10% chance)
+        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4 : -4);
+        
+        let val = parseFloat((app.config.std + noise).toFixed(1));
+        batch.raw.push({ l: l+1, v: val });
+        batch.flat.push(val);
       }
     }
-  }).then((res) => {
-    if (res.isConfirmed) {
-      CONFIG.flavor = res.value.flavor;
-      CONFIG.std = res.value.std;
-      CONFIG.tol = res.value.tol;
-      updateConfigUI();
-      Swal.fire("Saved", "Settings updated successfully", "success");
+
+    // Calc Stats
+    const sum = batch.flat.reduce((a,b)=>a+b,0);
+    batch.avg = parseFloat((sum/20).toFixed(2));
+    batch.min = Math.min(...batch.flat);
+    batch.max = Math.max(...batch.flat);
+    batch.status = (batch.avg >= app.config.std - app.config.tol && batch.avg <= app.config.std + app.config.tol) ? "OK" : "REJECT";
+
+    // Save & Update
+    app.data.push(batch);
+    app.save();
+    app.refreshStats();
+    
+    Swal.fire({
+      toast: true, position: 'top-end', icon: 'success', 
+      title: `Batch Hour ${hourIdx} Processed`, showConfirmButton: false, timer: 1500
+    });
+  },
+
+  refreshStats: () => {
+    if(app.data.length === 0) return;
+
+    const lastBatch = app.data[app.data.length-1];
+    
+    // 1. Update KPIs
+    document.getElementById('kpiAvg').innerText = lastBatch.avg;
+    const badge = document.getElementById('kpiStatus');
+    badge.innerText = lastBatch.status;
+    badge.className = `badge ${lastBatch.status === 'OK' ? 'badge-ok' : 'badge-ng'}`;
+    document.getElementById('dispPattern').innerText = lastBatch.pattern;
+
+    // Total Reject Calc
+    let totalRej = 0;
+    let allWeights = [];
+    app.data.forEach(b => {
+      b.flat.forEach(w => {
+        allWeights.push(w);
+        if(w > app.config.std + app.config.tol || w < app.config.std - app.config.tol) totalRej++;
+      });
+    });
+    document.getElementById('kpiReject').innerText = totalRej;
+    document.getElementById('dbCount').innerText = app.data.length + " Records";
+
+    // 2. Advanced Stats (Sigma, Cp, Cpk)
+    const n = allWeights.length;
+    const mean = allWeights.reduce((a,b)=>a+b,0) / n;
+    const variance = allWeights.reduce((a,b)=>a+Math.pow(b-mean,2),0) / n;
+    const stdDev = Math.sqrt(variance);
+    
+    const usl = app.config.std + app.config.tol;
+    const lsl = app.config.std - app.config.tol;
+    
+    const cp = (usl - lsl) / (6 * stdDev);
+    const cpu = (usl - mean) / (3 * stdDev);
+    const cpl = (mean - lsl) / (3 * stdDev);
+    const cpk = Math.min(cpu, cpl);
+
+    document.getElementById('kpiCpk').innerText = cpk.toFixed(2);
+    document.getElementById('statSigma').innerText = stdDev.toFixed(3);
+    document.getElementById('statCp').innerText = cp.toFixed(2);
+    document.getElementById('statCpk').innerText = cpk.toFixed(2);
+    document.getElementById('statMin').innerText = Math.min(...allWeights);
+    document.getElementById('statMax').innerText = Math.max(...allWeights);
+    document.getElementById('statRange').innerText = (Math.max(...allWeights) - Math.min(...allWeights)).toFixed(1);
+
+    // 3. Update Visuals
+    app.updateCharts(allWeights);
+    app.renderTable();
+    app.renderHeatmap();
+  },
+
+  // VISUALIZATIONS
+  initCharts: () => {
+    // Trend Chart
+    const ctxT = document.getElementById('chartTrend').getContext('2d');
+    app.charts.trend = new Chart(ctxT, {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Avg', data: [], borderColor: '#3b82f6', tension:0.3 },
+        { label: 'USL', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 },
+        { label: 'LSL', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }
+      ]},
+      options: { responsive:true, maintainAspectRatio:false, scales: { y:{min:65, max:75} } }
+    });
+
+    // Histogram
+    const ctxH = document.getElementById('chartHisto').getContext('2d');
+    app.charts.histo = new Chart(ctxH, {
+      type: 'bar',
+      data: { labels: [], datasets: [{ label: 'Frequency', data: [], backgroundColor: '#10b981' }] },
+      options: { responsive:true, maintainAspectRatio:false }
+    });
+  },
+
+  updateCharts: (allWeights) => {
+    // Update Trend
+    const labels = app.data.map(b => `Hr ${b.hour}`);
+    const avgs = app.data.map(b => b.avg);
+    const usls = Array(labels.length).fill(app.config.std + app.config.tol);
+    const lsls = Array(labels.length).fill(app.config.std - app.config.tol);
+
+    app.charts.trend.data.labels = labels;
+    app.charts.trend.data.datasets[0].data = avgs;
+    app.charts.trend.data.datasets[1].data = usls;
+    app.charts.trend.data.datasets[2].data = lsls;
+    app.charts.trend.update();
+
+    // Update Histogram (Simple binning)
+    const bins = {};
+    for(let i=65; i<=75; i+=0.5) bins[i.toFixed(1)] = 0;
+    allWeights.forEach(w => {
+      let key = (Math.round(w*2)/2).toFixed(1); // Round to nearest 0.5
+      if(bins[key] !== undefined) bins[key]++;
+    });
+    app.charts.histo.data.labels = Object.keys(bins);
+    app.charts.histo.data.datasets[0].data = Object.values(bins);
+    app.charts.histo.update();
+  },
+
+  renderHeatmap: () => {
+    const laneStats = [0,0,0,0,0,0,0,0].map(()=>({sum:0, count:0}));
+    app.data.forEach(b => {
+      b.raw.forEach(r => {
+        laneStats[r.l-1].sum += r.v;
+        laneStats[r.l-1].count++;
+      });
+    });
+
+    const container = document.getElementById('laneHeatmap');
+    container.innerHTML = '';
+    laneStats.forEach((st, idx) => {
+      const avg = st.count ? (st.sum / st.count).toFixed(1) : '-';
+      let cls = 'lane-box';
+      if(st.count > 0) {
+        if(avg > app.config.std + 1 || avg < app.config.std - 1) cls += ' lane-ng';
+        else cls += ' lane-ok';
+      }
+      container.innerHTML += `<div class="${cls}"><div>L${idx+1}</div><div>${avg}</div></div>`;
+    });
+  },
+
+  renderTable: () => {
+    const tbody = document.querySelector('#dataTable tbody');
+    tbody.innerHTML = '';
+    [...app.data].reverse().forEach(b => {
+      const row = `<tr>
+        <td>${new Date(b.id).toLocaleTimeString()}</td>
+        <td>${b.hour}</td>
+        <td>${b.pattern}</td>
+        <td style="font-weight:bold; color:${b.status==='OK'?'var(--accent)':'var(--danger)'}">${b.avg}</td>
+        <td><span class="badge ${b.status==='OK'?'badge-ok':'badge-ng'}">${b.status}</span></td>
+        <td style="font-size:0.75rem; color:var(--text-muted);">${b.flat.slice(0,5).join(', ')}...</td>
+      </tr>`;
+      tbody.innerHTML += row;
+    });
+  },
+
+  // UTILITIES
+  save: () => {
+    localStorage.setItem('radar_data', JSON.stringify(app.data));
+    localStorage.setItem('radar_config', JSON.stringify(app.config));
+    app.updateUI();
+  },
+
+  resetData: () => {
+    Swal.fire({
+      title: 'Reset Database?',
+      text: "Semua data rekaman akan dihapus permanen.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Ya, Hapus!'
+    }).then((res) => {
+      if(res.isConfirmed) {
+        app.data = [];
+        app.save();
+        location.reload();
+      }
+    });
+  },
+
+  settings: () => {
+    Swal.fire({
+      title: 'Protected Settings',
+      input: 'password',
+      inputPlaceholder: 'Enter PIN (1234)',
+    }).then((res) => {
+      if(res.value === '1234') {
+        Swal.fire({
+          title: 'System Config',
+          html: `
+            <input id="sw-flav" class="swal2-input" value="${app.config.flavor}">
+            <input id="sw-std" type="number" class="swal2-input" value="${app.config.std}">
+            <input id="sw-tol" type="number" class="swal2-input" value="${app.config.tol}">
+          `,
+          preConfirm: () => ({
+            flavor: document.getElementById('sw-flav').value,
+            std: parseFloat(document.getElementById('sw-std').value),
+            tol: parseFloat(document.getElementById('sw-tol').value)
+          })
+        }).then((setup) => {
+          if(setup.isConfirmed) {
+            app.config.flavor = setup.value.flavor;
+            app.config.std = setup.value.std;
+            app.config.tol = setup.value.tol;
+            app.save();
+            Swal.fire('Saved', '', 'success');
+          }
+        });
+      } else if(res.value) {
+        Swal.fire('Error', 'Wrong PIN', 'error');
+      }
+    });
+  },
+
+  updateUI: () => {
+    document.getElementById('dispFlavor').innerText = app.config.flavor;
+    document.getElementById('dispStd').innerText = app.config.std;
+    document.getElementById('dispTol').innerText = app.config.tol;
+  },
+
+  setTab: (tab) => {
+    document.getElementById('view-dashboard').style.display = tab === 'dashboard' ? 'grid' : 'none';
+    document.getElementById('view-analytics').style.display = tab === 'analytics' ? 'grid' : 'none';
+    document.getElementById('view-data').style.display = tab === 'data' ? 'block' : 'none';
+  },
+
+  toggleTheme: () => {
+    if(document.body.getAttribute('data-theme') === 'light') {
+      document.body.removeAttribute('data-theme');
+      localStorage.setItem('radar_theme', 'dark');
+    } else {
+      document.body.setAttribute('data-theme', 'light');
+      localStorage.setItem('radar_theme', 'light');
     }
-  });
-}
+  },
+
+  exportPDF: () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    // Header
+    doc.setFontSize(10); doc.setFont("helvetica", "bold");
+    doc.text("PT INDOFOOD CBP SUKSES MAKMUR Tbk", 14, 10);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    doc.text("DIVISI NOODLE - PABRIK CIBITUNG", 14, 15);
+    doc.text("Kode Form: PDQC-015", 250, 10);
+    
+    doc.setFontSize(14); doc.setFont("helvetica", "bold");
+    doc.text("LAPORAN MONITORING BERAT MI EX COOLING", 148, 25, {align:"center"});
+    
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    doc.text(`Tanggal: ${new Date().toLocaleDateString()}`, 14, 35);
+    doc.text(`Flavour: ${app.config.flavor}`, 14, 40);
+    doc.text(`Std: ${app.config.std}g (Tol ±${app.config.tol}g)`, 220, 35);
+
+    let body = [];
+    app.data.forEach(b => {
+      body.push([b.hour, "1-10", ...b.flat.slice(0,10), b.avg, b.status]);
+      body.push(["", "11-20", ...b.flat.slice(10,20), "", ""]);
+      body.push([]); 
+    });
+
+    doc.autoTable({
+      startY: 45,
+      head: [[
+        {content:'Jam', styles:{halign:'center'}},
+        {content:'No', styles:{halign:'center'}},
+        {content:'DATA BERAT (20 Sampel)', colSpan:10, styles:{halign:'center'}},
+        {content:'Avg', styles:{halign:'center'}},
+        {content:'Sts', styles:{halign:'center'}}
+      ]],
+      body: body,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1 },
+      headStyles: { fillColor: [220, 220, 220], textColor: [0,0,0] }
+    });
+
+    doc.save(`PDQC015_RADAR_PRO.pdf`);
+  },
+
+  exportExcel: () => {
+    const wb = XLSX.utils.book_new();
+    let wsData = [
+      ["PT INDOFOOD CBP SUKSES MAKMUR Tbk"],
+      ["LAPORAN QC RADAR V2.0 PRO"],
+      ["Flavour", app.config.flavor],
+      [""],
+      ["Jam", "Pola", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20", "AVG", "MIN", "MAX", "STATUS"]
+    ];
+    app.data.forEach(b => {
+      wsData.push([b.hour, b.pattern, ...b.flat, b.avg, b.min, b.max, b.status]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, "QC Data");
+    XLSX.writeFile(wb, "RADAR_PRO_EXPORT.xlsx");
+  }
+};
+
+// BOOTSTRAP
+document.addEventListener('DOMContentLoaded', app.init);
 </script>
 </body>
 </html>
