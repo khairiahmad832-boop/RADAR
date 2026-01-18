@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADAR V2.0 PRO | Industrial SPC System</title>
+<title>RADAR V3.0 ULTIMATE | QC System</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -16,78 +15,57 @@
 
 <style>
 :root {
-  --bg-body: #0f172a;
-  --bg-panel: #1e293b;
-  --bg-card: rgba(30, 41, 59, 0.7);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --primary: #3b82f6;
-  --accent: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
+  --bg-body: #0f172a; --bg-panel: #1e293b; --bg-card: rgba(30, 41, 59, 0.7);
+  --text-main: #f8fafc; --text-muted: #94a3b8;
+  --primary: #3b82f6; --accent: #10b981; --danger: #ef4444; --warning: #f59e0b;
   --border: rgba(255,255,255,0.1);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="light"] {
-  --bg-body: #f1f5f9;
-  --bg-panel: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border: rgba(0,0,0,0.1);
+  --bg-body: #f1f5f9; --bg-panel: #ffffff; --bg-card: rgba(255, 255, 255, 0.9);
+  --text-main: #0f172a; --text-muted: #64748b; --border: rgba(0,0,0,0.1);
 }
 
-* { margin:0; padding:0; box-sizing:border-box; transition: background 0.3s, color 0.3s; }
+* { margin:0; padding:0; box-sizing:border-box; transition: background 0.3s; }
 body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
-/* LAYOUT */
-.sidebar { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; z-index: 20; box-shadow: var(--shadow); }
+/* LAYOUT & COMPONENT */
+.sidebar { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
 .main { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
-.backdrop { position: fixed; inset: 0; z-index: -1; opacity: 0.5; background: radial-gradient(circle at 80% 20%, var(--primary) 0%, transparent 20%), radial-gradient(circle at 10% 80%, var(--accent) 0%, transparent 20%); filter: blur(80px); }
+.backdrop { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%); }
 
-/* COMPONENTS */
-.logo { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
-.nav-item { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 10px; }
+.logo { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
+.nav-item { padding: 12px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-weight: 500; display: flex; gap: 10px; align-items: center; }
 .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
-.nav-section { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin: 20px 0 10px; font-weight: 700; letter-spacing: 1px; }
+.nav-head { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin: 20px 0 5px; font-weight: 800; letter-spacing: 1px; }
 
-.grid-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(12px); box-shadow: var(--shadow); }
-.col-span-1 { grid-column: span 1; } .col-span-2 { grid-column: span 2; } .col-span-3 { grid-column: span 3; } .col-span-4 { grid-column: span 4; }
+.grid-dash { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; backdrop-filter: blur(12px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.span-2 { grid-column: span 2; } .span-4 { grid-column: span 4; }
 
-/* KPI VALUES */
-.kpi-value { font-size: 2.2rem; font-weight: 800; line-height: 1.2; }
-.kpi-label { font-size: 0.85rem; color: var(--text-muted); }
-.badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
-.badge-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
-.badge-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+.kpi-val { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+.badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+.bg-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
+.bg-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-/* RADAR ANIMATION */
-.radar-wrapper { width: 100px; height: 100px; position: relative; display: flex; justify-content: center; align-items: center; }
-.radar-ring { position: absolute; border: 2px solid var(--primary); border-radius: 50%; opacity: 0.3; }
-.r1 { width: 100%; height: 100%; } .r2 { width: 66%; height: 66%; } .r3 { width: 33%; height: 33%; }
-.radar-sweep { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(transparent 270deg, var(--primary)); animation: sweep 2s linear infinite; opacity: 0.3; }
-@keyframes sweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+/* HEATMAP 12 LANES */
+.heatmap { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 15px; }
+.lane-box { aspect-ratio: 1.2; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); position: relative; }
+.lane-active { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+.lane-val { font-weight: bold; font-size: 1rem; }
+.lane-n { position: absolute; top: 2px; left: 4px; font-size: 0.6rem; opacity: 0.7; }
 
 /* TABLE */
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); color: var(--text-muted); }
-td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
-tr:hover td { background: rgba(255,255,255,0.03); }
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border); color: var(--text-muted); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 
 /* BUTTONS */
-.btn { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-.btn-primary { background: var(--primary); color: white; }
-.btn-danger { background: var(--danger); color: white; }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+.btn { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.btn-p { background: var(--primary); color: #fff; }
+.btn-o { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
 .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-/* HEATMAP GRID */
-.heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 10px; }
-.lane-box { aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
-.lane-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); border-color: var(--accent); }
-.lane-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); border-color: var(--danger); }
 </style>
 </head>
 <body>
@@ -96,434 +74,282 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 
 <nav class="sidebar">
   <div class="logo">
-    <div class="radar-wrapper" style="width:30px; height:30px;">
-      <div class="radar-sweep"></div>
-    </div>
-    RADAR <span style="font-size:0.6em; color:var(--accent); margin-top:5px; margin-left:5px;">V2.0 PRO</span>
+    <i class="fas fa-radar"></i> RADAR <span style="font-size:0.5em; color:var(--accent); margin-top:5px;">V3.0</span>
   </div>
 
-  <div class="nav-section">Main Menu</div>
-  <div class="nav-item active" onclick="app.setTab('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</div>
-  <div class="nav-item" onclick="app.setTab('analytics')"><i class="fas fa-chart-bar"></i> SPC Analytics</div>
-  <div class="nav-item" onclick="app.setTab('data')"><i class="fas fa-database"></i> Database</div>
+  <div class="nav-head">MONITORING</div>
+  <div class="nav-item active" onclick="app.setTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</div>
+  <div class="nav-item" onclick="app.setTab('data')"><i class="fas fa-table"></i> Data Log</div>
 
-  <div class="nav-section">Export</div>
-  <div class="nav-item" onclick="app.exportPDF()"><i class="fas fa-file-pdf"></i> Laporan PDQC</div>
+  <div class="nav-head">Laporan (PDF)</div>
+  <div class="nav-item" onclick="app.exportPDF()"><i class="fas fa-file-pdf"></i> Cetak PDQC-015</div>
   <div class="nav-item" onclick="app.exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</div>
 
-  <div class="nav-section">System</div>
-  <div class="nav-item" onclick="app.toggleTheme()"><i class="fas fa-adjust"></i> Toggle Theme</div>
-  <div class="nav-item" onclick="app.settings()"><i class="fas fa-cog"></i> Settings</div>
+  <div class="nav-head">System</div>
+  <div class="nav-item" onclick="app.toggleTheme()"><i class="fas fa-adjust"></i> Tema Terang/Gelap</div>
   <div class="nav-item" onclick="app.resetData()" style="color:var(--danger)"><i class="fas fa-trash"></i> Reset Data</div>
 
-  <div style="margin-top: auto;">
-    <div class="card" style="padding:15px; font-size:0.8rem;">
-      <div style="color:var(--text-muted)">Active Flavour</div>
-      <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;" id="dispFlavor">Loading...</div>
-      <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); paddingTop:5px;">
-        <span>Std: <b id="dispStd">--</b>g</span>
-        <span>Tol: ±<b id="dispTol">--</b>g</span>
-      </div>
+  <div style="margin-top:auto;">
+    <div class="card" style="padding:15px; font-size:0.8rem; border:1px solid var(--primary);">
+      <div style="color:var(--text-muted)">Active Line</div>
+      <div style="font-weight:bold; font-size:1.1rem; color:var(--primary)">LINE 8 (Aktif)</div>
+      <div style="font-size:0.7rem; opacity:0.7; margin-top:5px;">Jalur 9-12 Kosong</div>
     </div>
   </div>
 </nav>
 
 <main class="main">
-  
   <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
     <div>
-      <h1 style="font-size:1.8rem; font-weight:800;">Production Monitor</h1>
-      <div style="color:var(--text-muted);">Real-time QC Sampling & Analysis</div>
+      <h1 style="font-size:1.8rem; font-weight:800;">QC Sampling Center</h1>
+      <div style="color:var(--text-muted);">Target: 70g | Tol: ±3g | Sampel: 20pcs</div>
     </div>
-    <div style="display:flex; gap:1rem;">
-      <button class="btn btn-outline" onclick="app.simulate()"><i class="fas fa-satellite-dish"></i> SCAN BATCH (20)</button>
-    </div>
+    <button class="btn btn-p" onclick="app.simulate()"><i class="fas fa-sync"></i> SCAN BATCH (20 DATA)</button>
   </header>
 
-  <div id="view-dashboard" class="grid-dashboard">
-    <div class="card col-span-1">
-      <div class="kpi-label">Current Average</div>
-      <div class="kpi-value" id="kpiAvg">--</div>
-      <span class="badge" id="kpiStatus">WAITING</span>
+  <div id="view-dashboard" class="grid-dash">
+    <div class="card">
+      <div style="color:var(--text-muted)">Rata-rata Terkini</div>
+      <div class="kpi-val" id="kpiAvg">--</div>
+      <div class="badge bg-ok" id="kpiStatus">READY</div>
     </div>
-    <div class="card col-span-1">
-      <div class="kpi-label">Process Capability (Cpk)</div>
-      <div class="kpi-value" id="kpiCpk">--</div>
-      <div style="font-size:0.75rem; color:var(--text-muted)">Target > 1.33</div>
+    <div class="card">
+      <div style="color:var(--text-muted)">Total Reject (Shift)</div>
+      <div class="kpi-val" style="color:var(--danger)" id="kpiRej">0</div>
+      <div style="font-size:0.8rem;">Pcs Out of Spec</div>
     </div>
-    <div class="card col-span-1">
-      <div class="kpi-label">Total Reject (Shift)</div>
-      <div class="kpi-value" style="color:var(--danger)" id="kpiReject">0</div>
-      <div style="font-size:0.75rem;">Pieces</div>
+    <div class="card">
+      <div style="color:var(--text-muted)">Pola Sampling</div>
+      <div style="font-size:1.2rem; font-weight:bold; color:var(--warning); margin-top:5px;" id="kpiPattern">--</div>
+      <div style="font-size:0.8rem;">Rotasi Jam Ganjil/Genap</div>
     </div>
-    <div class="card col-span-1">
-      <div class="kpi-label">Sampling Pattern</div>
-      <div style="font-size:1.2rem; font-weight:bold; margin-top:5px; color:var(--warning)" id="dispPattern">--</div>
-      <div style="font-size:0.75rem; opacity:0.7;">Dynamic Rotation</div>
-    </div>
-
-    <div class="card col-span-3" style="height:350px;">
-      <h3 style="margin-bottom:1rem;">X-Bar Chart (Weight Trend)</h3>
-      <canvas id="chartTrend"></canvas>
+    <div class="card">
+      <div style="color:var(--text-muted)">Accept / Reject Rate</div>
+      <div class="kpi-val" style="color:var(--accent)" id="kpiAR">--/--</div>
+      <div style="font-size:0.8rem;">Batch Terakhir</div>
     </div>
 
-    <div class="card col-span-1" style="height:350px;">
-      <h3 style="margin-bottom:0.5rem;">Lane Heatmap</h3>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Avg Weight per Lane</p>
-      <div id="laneHeatmap" class="heatmap">
+    <div class="card span-2" style="min-height:300px;">
+      <h3>Status 12 Jalur (Real-time)</h3>
+      <div id="heatmapContainer" class="heatmap">
         </div>
-      <div style="margin-top:1rem; font-size:0.7rem; color:var(--text-muted); text-align:center;">
-        Merah = Rata-rata menyimpang jauh
+    </div>
+
+    <div class="card span-2">
+      <h3>Grafik Tren Berat (X-Bar)</h3>
+      <div style="height:250px;">
+        <canvas id="chartMain"></canvas>
       </div>
     </div>
   </div>
 
-  <div id="view-analytics" class="grid-dashboard" style="display:none;">
-    <div class="card col-span-2" style="height:400px;">
-      <h3>Histogram (Bell Curve)</h3>
-      <canvas id="chartHisto"></canvas>
-    </div>
-    <div class="card col-span-2">
-      <h3>Six Sigma Metrics</h3>
-      <table style="margin-top:1rem;">
-        <tr><td>Standard Deviation (σ)</td><td style="font-weight:bold; text-align:right;" id="statSigma">--</td></tr>
-        <tr><td>Process Capability (Cp)</td><td style="font-weight:bold; text-align:right;" id="statCp">--</td></tr>
-        <tr><td>Capability Index (Cpk)</td><td style="font-weight:bold; text-align:right;" id="statCpk">--</td></tr>
-        <tr><td>Min Weight</td><td style="font-weight:bold; text-align:right;" id="statMin">--</td></tr>
-        <tr><td>Max Weight</td><td style="font-weight:bold; text-align:right;" id="statMax">--</td></tr>
-        <tr><td>Range (Max-Min)</td><td style="font-weight:bold; text-align:right;" id="statRange">--</td></tr>
-      </table>
-    </div>
-  </div>
-
-  <div id="view-data" class="card col-span-4" style="display:none;">
-    <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
-      <h3>Recorded Batches</h3>
-      <span class="badge badge-ok" id="dbCount">0 Records</span>
-    </div>
+  <div id="view-data" class="card span-4" style="display:none;">
+    <h3 style="margin-bottom:1rem;">Database Sampling</h3>
     <div style="overflow-x:auto;">
       <table id="dataTable">
         <thead>
           <tr>
-            <th>Time</th>
-            <th>Hour</th>
-            <th>Pattern</th>
+            <th>Jam</th>
+            <th>Pola</th>
+            <th>J1</th><th>J2</th><th>J3</th><th>J4</th>
+            <th>J5</th><th>J6</th><th>J7</th><th>J8</th>
+            <th>J9-12</th>
             <th>Avg</th>
-            <th>Status</th>
-            <th>Detail</th>
+            <th>A/R</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
-
 </main>
 
 <script>
 const app = {
-  // STATE & CONFIG
-  config: {
-    flavor: "GSS-USA 6x5 DPL",
+  // CONFIG
+  cfg: {
     std: 70.0,
-    tol: 3.0,
-    line: "16",
-    shift: "1",
-    regu: "A"
+    tol: 3.0, // Min 67, Max 73
+    activeLines: 8, // Hanya 8 jalur yang diisi
+    maxLines: 12    // Tapi laporan tetap 12 jalur
   },
-  data: [], // Persistent Data
-  charts: {},
+  data: [],
+  chart: null,
 
-  // INIT
   init: () => {
-    // Load from LocalStorage
-    const savedConfig = localStorage.getItem('radar_config');
-    const savedData = localStorage.getItem('radar_data');
-    if (savedConfig) app.config = JSON.parse(savedConfig);
-    if (savedData) app.data = JSON.parse(savedData);
-
-    app.updateUI();
-    app.initCharts();
-    app.refreshStats();
+    // Load Data
+    const saved = localStorage.getItem('radar_v3_data');
+    if(saved) app.data = JSON.parse(saved);
     
-    // Check Theme
-    if (localStorage.getItem('radar_theme') === 'light') {
-      document.body.setAttribute('data-theme', 'light');
-    }
+    app.initChart();
+    app.refreshUI();
   },
 
-  // CORE FUNCTIONS
+  // --- LOGIKA UTAMA (SIMULASI ROTASI) ---
   simulate: () => {
-    // Determine Pattern based on Hour Counter (Data length)
     const hourIdx = app.data.length + 1;
     const isOdd = hourIdx % 2 !== 0;
-    const pattern = isOdd ? "Odd (3-2)" : "Even (2-3)";
-    const counts = isOdd ? [3,3,3,3,2,2,2,2] : [2,2,2,2,3,3,3,3];
+    
+    // DEFINISI POLA (Sesuai Request)
+    // Ganjil: J1-4 (3 sample), J5-8 (2 sample)
+    // Genap : J1-4 (2 sample), J5-8 (3 sample)
+    // Jalur 9-12: 0 sample
+    
+    let patternName = isOdd ? "Ganjil (3-3-3-3 | 2-2-2-2)" : "Genap (2-2-2-2 | 3-3-3-3)";
+    let counts = isOdd ? [3,3,3,3, 2,2,2,2] : [2,2,2,2, 3,3,3,3];
+    
+    // Pastikan array counts punya 12 elemen (sisanya 0)
+    while(counts.length < 12) counts.push(0);
 
     let batch = {
       id: Date.now(),
-      time: new Date(),
       hour: hourIdx,
-      pattern: pattern,
-      raw: [],
-      flat: []
+      pattern: patternName,
+      lines: {}, // Object untuk menyimpan array berat per jalur
+      flat: [],
+      rejectCount: 0
     };
 
-    // Generate 20 Samples
-    for(let l=0; l<8; l++) {
-      for(let k=0; k<counts[l]; k++) {
-        // Simulating Realistic Noise
-        let noise = (Math.random() - 0.5) * 2.5; 
-        // Occasional Outlier (10% chance)
-        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4 : -4);
+    // GENERATE DATA
+    for(let l=0; l<12; l++) {
+      let lineNum = l+1;
+      batch.lines[lineNum] = [];
+      
+      let numSamples = counts[l]; // Ambil jumlah sampel untuk jalur ini
+      
+      for(let s=0; s<numSamples; s++) {
+        // Random Weight Logic (67-73 is OK)
+        // Simulasi sesekali reject
+        let noise = (Math.random() - 0.5) * 4; // +/- 2 variasi normal
+        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4.5 : -4.5); // Outlier force
         
-        let val = parseFloat((app.config.std + noise).toFixed(1));
-        batch.raw.push({ l: l+1, v: val });
-        batch.flat.push(val);
+        let w = parseFloat((app.cfg.std + noise).toFixed(1));
+        batch.lines[lineNum].push(w);
+        batch.flat.push(w);
+
+        // Cek Reject
+        if(w < (app.cfg.std - app.cfg.tol) || w > (app.cfg.std + app.cfg.tol)) {
+          batch.rejectCount++;
+        }
       }
     }
 
-    // Calc Stats
-    const sum = batch.flat.reduce((a,b)=>a+b,0);
-    batch.avg = parseFloat((sum/20).toFixed(2));
-    batch.min = Math.min(...batch.flat);
-    batch.max = Math.max(...batch.flat);
-    batch.status = (batch.avg >= app.config.std - app.config.tol && batch.avg <= app.config.std + app.config.tol) ? "OK" : "REJECT";
+    // STATS
+    let sum = batch.flat.reduce((a,b)=>a+b,0);
+    batch.avg = batch.flat.length ? (sum / batch.flat.length).toFixed(1) : 0;
+    batch.acceptCount = 20 - batch.rejectCount;
 
-    // Save & Update
     app.data.push(batch);
     app.save();
-    app.refreshStats();
+    app.refreshUI();
     
     Swal.fire({
-      toast: true, position: 'top-end', icon: 'success', 
-      title: `Batch Hour ${hourIdx} Processed`, showConfirmButton: false, timer: 1500
+      icon: 'success', title: `Batch Jam ${hourIdx} Masuk`,
+      text: `${patternName} - Total 20 Sampel`,
+      timer: 1500, showConfirmButton: false
     });
   },
 
-  refreshStats: () => {
-    if(app.data.length === 0) return;
+  // --- UI UPDATER ---
+  refreshUI: () => {
+    if(app.data.length === 0) {
+      app.renderHeatmap(null);
+      return;
+    }
 
-    const lastBatch = app.data[app.data.length-1];
+    const last = app.data[app.data.length-1];
     
-    // 1. Update KPIs
-    document.getElementById('kpiAvg').innerText = lastBatch.avg;
-    const badge = document.getElementById('kpiStatus');
-    badge.innerText = lastBatch.status;
-    badge.className = `badge ${lastBatch.status === 'OK' ? 'badge-ok' : 'badge-ng'}`;
-    document.getElementById('dispPattern').innerText = lastBatch.pattern;
-
-    // Total Reject Calc
-    let totalRej = 0;
-    let allWeights = [];
-    app.data.forEach(b => {
-      b.flat.forEach(w => {
-        allWeights.push(w);
-        if(w > app.config.std + app.config.tol || w < app.config.std - app.config.tol) totalRej++;
-      });
-    });
-    document.getElementById('kpiReject').innerText = totalRej;
-    document.getElementById('dbCount').innerText = app.data.length + " Records";
-
-    // 2. Advanced Stats (Sigma, Cp, Cpk)
-    const n = allWeights.length;
-    const mean = allWeights.reduce((a,b)=>a+b,0) / n;
-    const variance = allWeights.reduce((a,b)=>a+Math.pow(b-mean,2),0) / n;
-    const stdDev = Math.sqrt(variance);
+    // KPI
+    document.getElementById('kpiAvg').innerText = last.avg;
+    document.getElementById('kpiStatus').innerText = last.rejectCount === 0 ? "NORMAL" : "WARNING";
+    document.getElementById('kpiStatus').className = `badge ${last.rejectCount === 0 ? 'bg-ok' : 'bg-ng'}`;
+    document.getElementById('kpiPattern').innerText = last.pattern;
     
-    const usl = app.config.std + app.config.tol;
-    const lsl = app.config.std - app.config.tol;
-    
-    const cp = (usl - lsl) / (6 * stdDev);
-    const cpu = (usl - mean) / (3 * stdDev);
-    const cpl = (mean - lsl) / (3 * stdDev);
-    const cpk = Math.min(cpu, cpl);
+    // Hitung Total Reject Shift
+    let totalRej = app.data.reduce((a,b) => a + b.rejectCount, 0);
+    document.getElementById('kpiRej').innerText = totalRej;
+    document.getElementById('kpiAR').innerText = `${last.acceptCount}/${last.rejectCount}`;
 
-    document.getElementById('kpiCpk').innerText = cpk.toFixed(2);
-    document.getElementById('statSigma').innerText = stdDev.toFixed(3);
-    document.getElementById('statCp').innerText = cp.toFixed(2);
-    document.getElementById('statCpk').innerText = cpk.toFixed(2);
-    document.getElementById('statMin').innerText = Math.min(...allWeights);
-    document.getElementById('statMax').innerText = Math.max(...allWeights);
-    document.getElementById('statRange').innerText = (Math.max(...allWeights) - Math.min(...allWeights)).toFixed(1);
-
-    // 3. Update Visuals
-    app.updateCharts(allWeights);
+    app.renderHeatmap(last);
+    app.updateChart();
     app.renderTable();
-    app.renderHeatmap();
   },
 
-  // VISUALIZATIONS
-  initCharts: () => {
-    // Trend Chart
-    const ctxT = document.getElementById('chartTrend').getContext('2d');
-    app.charts.trend = new Chart(ctxT, {
-      type: 'line',
-      data: { labels: [], datasets: [
-        { label: 'Avg', data: [], borderColor: '#3b82f6', tension:0.3 },
-        { label: 'USL', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 },
-        { label: 'LSL', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }
-      ]},
-      options: { responsive:true, maintainAspectRatio:false, scales: { y:{min:65, max:75} } }
-    });
-
-    // Histogram
-    const ctxH = document.getElementById('chartHisto').getContext('2d');
-    app.charts.histo = new Chart(ctxH, {
-      type: 'bar',
-      data: { labels: [], datasets: [{ label: 'Frequency', data: [], backgroundColor: '#10b981' }] },
-      options: { responsive:true, maintainAspectRatio:false }
-    });
-  },
-
-  updateCharts: (allWeights) => {
-    // Update Trend
-    const labels = app.data.map(b => `Hr ${b.hour}`);
-    const avgs = app.data.map(b => b.avg);
-    const usls = Array(labels.length).fill(app.config.std + app.config.tol);
-    const lsls = Array(labels.length).fill(app.config.std - app.config.tol);
-
-    app.charts.trend.data.labels = labels;
-    app.charts.trend.data.datasets[0].data = avgs;
-    app.charts.trend.data.datasets[1].data = usls;
-    app.charts.trend.data.datasets[2].data = lsls;
-    app.charts.trend.update();
-
-    // Update Histogram (Simple binning)
-    const bins = {};
-    for(let i=65; i<=75; i+=0.5) bins[i.toFixed(1)] = 0;
-    allWeights.forEach(w => {
-      let key = (Math.round(w*2)/2).toFixed(1); // Round to nearest 0.5
-      if(bins[key] !== undefined) bins[key]++;
-    });
-    app.charts.histo.data.labels = Object.keys(bins);
-    app.charts.histo.data.datasets[0].data = Object.values(bins);
-    app.charts.histo.update();
-  },
-
-  renderHeatmap: () => {
-    const laneStats = [0,0,0,0,0,0,0,0].map(()=>({sum:0, count:0}));
-    app.data.forEach(b => {
-      b.raw.forEach(r => {
-        laneStats[r.l-1].sum += r.v;
-        laneStats[r.l-1].count++;
-      });
-    });
-
-    const container = document.getElementById('laneHeatmap');
+  renderHeatmap: (batch) => {
+    const container = document.getElementById('heatmapContainer');
     container.innerHTML = '';
-    laneStats.forEach((st, idx) => {
-      const avg = st.count ? (st.sum / st.count).toFixed(1) : '-';
-      let cls = 'lane-box';
-      if(st.count > 0) {
-        if(avg > app.config.std + 1 || avg < app.config.std - 1) cls += ' lane-ng';
-        else cls += ' lane-ok';
+    
+    for(let i=1; i<=12; i++) {
+      let content = '-';
+      let colorClass = '';
+      
+      if(batch && batch.lines[i] && batch.lines[i].length > 0) {
+        // Tampilkan Rata-rata jalur tersebut
+        let sum = batch.lines[i].reduce((a,b)=>a+b,0);
+        let avg = (sum / batch.lines[i].length).toFixed(1);
+        content = avg;
+        
+        // Cek apakah ada reject di jalur ini?
+        let hasReject = batch.lines[i].some(w => w < 67 || w > 73);
+        colorClass = hasReject ? 'background:rgba(239,68,68,0.2); border-color:var(--danger);' : 'lane-active';
       }
-      container.innerHTML += `<div class="${cls}"><div>L${idx+1}</div><div>${avg}</div></div>`;
-    });
+
+      let html = `
+        <div class="lane-box" style="${colorClass}">
+          <div class="lane-n">J${i}</div>
+          <div class="lane-val">${content}</div>
+        </div>
+      `;
+      container.innerHTML += html;
+    }
   },
 
   renderTable: () => {
     const tbody = document.querySelector('#dataTable tbody');
     tbody.innerHTML = '';
+    
     [...app.data].reverse().forEach(b => {
-      const row = `<tr>
-        <td>${new Date(b.id).toLocaleTimeString()}</td>
-        <td>${b.hour}</td>
-        <td>${b.pattern}</td>
-        <td style="font-weight:bold; color:${b.status==='OK'?'var(--accent)':'var(--danger)'}">${b.avg}</td>
-        <td><span class="badge ${b.status==='OK'?'badge-ok':'badge-ng'}">${b.status}</span></td>
-        <td style="font-size:0.75rem; color:var(--text-muted);">${b.flat.slice(0,5).join(', ')}...</td>
-      </tr>`;
-      tbody.innerHTML += row;
-    });
-  },
-
-  // UTILITIES
-  save: () => {
-    localStorage.setItem('radar_data', JSON.stringify(app.data));
-    localStorage.setItem('radar_config', JSON.stringify(app.config));
-    app.updateUI();
-  },
-
-  resetData: () => {
-    Swal.fire({
-      title: 'Reset Database?',
-      text: "Semua data rekaman akan dihapus permanen.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      confirmButtonText: 'Ya, Hapus!'
-    }).then((res) => {
-      if(res.isConfirmed) {
-        app.data = [];
-        app.save();
-        location.reload();
+      // Buat string ringkas per jalur
+      let cols = '';
+      for(let i=1; i<=8; i++) {
+        let vals = b.lines[i].join(', ');
+        cols += `<td style="font-size:0.7rem">${vals}</td>`;
       }
+      
+      let html = `
+        <tr>
+          <td>${b.hour}</td>
+          <td>${b.pattern.split('(')[0]}</td>
+          ${cols}
+          <td style="color:#666; font-size:0.7rem;">(Kosong)</td>
+          <td style="font-weight:bold">${b.avg}</td>
+          <td>${b.acceptCount}/${b.rejectCount}</td>
+        </tr>
+      `;
+      tbody.innerHTML += html;
     });
   },
 
-  settings: () => {
-    Swal.fire({
-      title: 'Protected Settings',
-      input: 'password',
-      inputPlaceholder: 'Enter PIN (1234)',
-    }).then((res) => {
-      if(res.value === '1234') {
-        Swal.fire({
-          title: 'System Config',
-          html: `
-            <input id="sw-flav" class="swal2-input" value="${app.config.flavor}">
-            <input id="sw-std" type="number" class="swal2-input" value="${app.config.std}">
-            <input id="sw-tol" type="number" class="swal2-input" value="${app.config.tol}">
-          `,
-          preConfirm: () => ({
-            flavor: document.getElementById('sw-flav').value,
-            std: parseFloat(document.getElementById('sw-std').value),
-            tol: parseFloat(document.getElementById('sw-tol').value)
-          })
-        }).then((setup) => {
-          if(setup.isConfirmed) {
-            app.config.flavor = setup.value.flavor;
-            app.config.std = setup.value.std;
-            app.config.tol = setup.value.tol;
-            app.save();
-            Swal.fire('Saved', '', 'success');
-          }
-        });
-      } else if(res.value) {
-        Swal.fire('Error', 'Wrong PIN', 'error');
-      }
-    });
+  updateChart: () => {
+    const labels = app.data.map(b => `Jam ${b.hour}`);
+    const data = app.data.map(b => b.avg);
+    
+    app.chart.data.labels = labels;
+    app.chart.data.datasets[0].data = data;
+    
+    // Garis Batas
+    app.chart.data.datasets[1].data = Array(labels.length).fill(73);
+    app.chart.data.datasets[2].data = Array(labels.length).fill(67);
+    
+    app.chart.update();
   },
 
-  updateUI: () => {
-    document.getElementById('dispFlavor').innerText = app.config.flavor;
-    document.getElementById('dispStd').innerText = app.config.std;
-    document.getElementById('dispTol').innerText = app.config.tol;
-  },
-
-  setTab: (tab) => {
-    document.getElementById('view-dashboard').style.display = tab === 'dashboard' ? 'grid' : 'none';
-    document.getElementById('view-analytics').style.display = tab === 'analytics' ? 'grid' : 'none';
-    document.getElementById('view-data').style.display = tab === 'data' ? 'block' : 'none';
-  },
-
-  toggleTheme: () => {
-    if(document.body.getAttribute('data-theme') === 'light') {
-      document.body.removeAttribute('data-theme');
-      localStorage.setItem('radar_theme', 'dark');
-    } else {
-      document.body.setAttribute('data-theme', 'light');
-      localStorage.setItem('radar_theme', 'light');
-    }
-  },
-
+  // --- PDF ENGINE (SESUAI REQUEST) ---
   exportPDF: () => {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
-    
-    // Header
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+
+    // Header Standar
     doc.setFontSize(10); doc.setFont("helvetica", "bold");
     doc.text("PT INDOFOOD CBP SUKSES MAKMUR Tbk", 14, 10);
     doc.setFontSize(8); doc.setFont("helvetica", "normal");
@@ -535,53 +361,152 @@ const app = {
     
     doc.setFontSize(9); doc.setFont("helvetica", "normal");
     doc.text(`Tanggal: ${new Date().toLocaleDateString()}`, 14, 35);
-    doc.text(`Flavour: ${app.config.flavor}`, 14, 40);
-    doc.text(`Std: ${app.config.std}g (Tol ±${app.config.tol}g)`, 220, 35);
+    doc.text(`Standar: 70g (Min 67 - Max 73)`, 230, 35);
 
+    // BUILD DATA TABLE
     let body = [];
+    
     app.data.forEach(b => {
-      body.push([b.hour, "1-10", ...b.flat.slice(0,10), b.avg, b.status]);
-      body.push(["", "11-20", ...b.flat.slice(10,20), "", ""]);
-      body.push([]); 
+      let row = [];
+      row.push(b.hour);         // Jam
+      row.push("20");           // Sampel Size
+      
+      // Loop Jalur 1 sampai 12
+      for(let i=1; i<=12; i++) {
+        let samples = b.lines[i] || [];
+        // Join angka dengan Spasi/Koma agar muat di kolom
+        // Jika kosong, string kosong
+        row.push(samples.join('\n')); 
+      }
+      
+      row.push(b.avg);          // Rata-rata
+      row.push(`${b.acceptCount}/${b.rejectCount}`); // A/R
+      
+      body.push(row);
     });
 
     doc.autoTable({
       startY: 45,
-      head: [[
-        {content:'Jam', styles:{halign:'center'}},
-        {content:'No', styles:{halign:'center'}},
-        {content:'DATA BERAT (20 Sampel)', colSpan:10, styles:{halign:'center'}},
-        {content:'Avg', styles:{halign:'center'}},
-        {content:'Sts', styles:{halign:'center'}}
-      ]],
+      // STRUKTUR HEADER SESUAI GAMBAR MANUAL
+      head: [
+        [
+          {content: 'Jam', rowSpan: 2, styles:{valign:'middle'}},
+          {content: 'Jml\nSmpl', rowSpan: 2, styles:{valign:'middle'}},
+          {content: 'DATA BERAT PER JALUR (gram)', colSpan: 12, styles:{halign:'center'}},
+          {content: 'Rata\nRata', rowSpan: 2, styles:{valign:'middle'}},
+          {content: 'A / R', rowSpan: 2, styles:{valign:'middle'}}
+        ],
+        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+      ],
       body: body,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1 },
-      headStyles: { fillColor: [220, 220, 220], textColor: [0,0,0] }
+      styles: { 
+        fontSize: 7, // Font kecil agar muat 12 jalur
+        cellPadding: 2, 
+        lineColor: [0,0,0], 
+        lineWidth: 0.1,
+        textColor: [0,0,0],
+        halign: 'center',
+        valign: 'middle'
+      },
+      headStyles: { fillColor: [220, 220, 220], textColor: [0,0,0], fontStyle: 'bold' },
+      
+      // LOGIKA WARNA MERAH UNTUK REJECT
+      didParseCell: function(data) {
+        // Cek jika kolom adalah data jalur (index 2 sampai 13)
+        if (data.section === 'body' && data.column.index >= 2 && data.column.index <= 13) {
+          let text = data.cell.raw; // Isi sel, misal "70\n71\n65"
+          if (text) {
+            // Pecah string jadi angka
+            let nums = text.toString().split('\n').map(Number);
+            // Cek apakah ada yg reject?
+            let hasReject = nums.some(n => n < 67 || n > 73);
+            if(hasReject) {
+              data.cell.styles.textColor = [255, 0, 0]; // Merah
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
+        // Warna merah juga untuk kolom A/R jika ada Reject
+        if (data.section === 'body' && data.column.index === 15) {
+           let ar = data.cell.raw.split('/'); // "19/1"
+           if(parseInt(ar[1]) > 0) {
+             data.cell.styles.textColor = [255, 0, 0];
+           }
+        }
+      }
     });
 
-    doc.save(`PDQC015_RADAR_PRO.pdf`);
+    // FOOTER
+    let fy = doc.lastAutoTable.finalY + 10;
+    doc.text("Keterangan: Angka Merah = Out of Spec", 14, fy);
+    doc.text("Dibuat Oleh: QC Field", 180, fy);
+    doc.text("Diketahui: SPV QC", 240, fy);
+
+    doc.save(`PDQC015_ULTIMATE_${Date.now()}.pdf`);
   },
 
   exportExcel: () => {
     const wb = XLSX.utils.book_new();
     let wsData = [
       ["PT INDOFOOD CBP SUKSES MAKMUR Tbk"],
-      ["LAPORAN QC RADAR V2.0 PRO"],
-      ["Flavour", app.config.flavor],
+      ["DATA QC - RADAR V3.0"],
       [""],
-      ["Jam", "Pola", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20", "AVG", "MIN", "MAX", "STATUS"]
+      ["Jam", "Pola", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9", "J10", "J11", "J12", "Avg", "A/R"]
     ];
+    
     app.data.forEach(b => {
-      wsData.push([b.hour, b.pattern, ...b.flat, b.avg, b.min, b.max, b.status]);
+      let row = [
+        b.hour, b.pattern,
+        b.lines[1].join(','), b.lines[2].join(','), b.lines[3].join(','), b.lines[4].join(','),
+        b.lines[5].join(','), b.lines[6].join(','), b.lines[7].join(','), b.lines[8].join(','),
+        "", "", "", "", // J9-12 Kosong
+        b.avg, `${b.acceptCount}/${b.rejectCount}`
+      ];
+      wsData.push(row);
     });
+
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, "QC Data");
-    XLSX.writeFile(wb, "RADAR_PRO_EXPORT.xlsx");
+    XLSX.writeFile(wb, "RADAR_Data.xlsx");
+  },
+
+  // UTILS
+  initChart: () => {
+    const ctx = document.getElementById('chartMain').getContext('2d');
+    app.chart = new Chart(ctx, {
+      type: 'line',
+      data: { 
+        labels: [], 
+        datasets: [
+          { label: 'Avg', data: [], borderColor: '#3b82f6', tension:0.3 },
+          { label: 'Max (73)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 },
+          { label: 'Min (67)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }
+        ] 
+      },
+      options: { responsive:true, maintainAspectRatio:false, scales:{y:{min:65, max:75}} }
+    });
+  },
+  
+  save: () => localStorage.setItem('radar_v3_data', JSON.stringify(app.data)),
+  
+  resetData: () => {
+    Swal.fire({title:'Hapus Data?', icon:'warning', showCancelButton:true}).then(r=>{
+      if(r.isConfirmed) { app.data=[]; app.save(); location.reload(); }
+    })
+  },
+  
+  toggleTheme: () => {
+    const b = document.body;
+    b.hasAttribute('data-theme') ? b.removeAttribute('data-theme') : b.setAttribute('data-theme','light');
+  },
+  
+  setTab: (t) => {
+    document.getElementById('view-dashboard').style.display = t==='dashboard'?'grid':'none';
+    document.getElementById('view-data').style.display = t==='data'?'block':'none';
   }
 };
 
-// BOOTSTRAP
 document.addEventListener('DOMContentLoaded', app.init);
 </script>
 </body>
