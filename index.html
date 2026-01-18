@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADAR V6.0 FINAL | Production QC</title>
+<title>RADAR V8.0 HISTORY | QC System</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -55,19 +55,25 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(
 .lane-val { font-weight: bold; font-size: 1rem; }
 .lane-n { position: absolute; top: 2px; left: 4px; font-size: 0.6rem; opacity: 0.7; }
 
-/* ANALYTICS TABLE */
-.sigma-table td { padding: 8px; border-bottom: 1px solid var(--border); }
-.sigma-table td:last-child { text-align: right; font-weight: bold; font-family: 'JetBrains Mono'; }
-
 /* TABLE */
 table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border); color: var(--text-muted); }
 td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 
+/* ANGKA WARNA */
+.val-ok { color: var(--accent); }
+.val-ng { color: var(--danger); font-weight: bold; }
+
 /* BUTTONS */
 .btn { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
 .btn-p { background: var(--primary); color: #fff; }
 .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* CHANGELOG LIST */
+.changelog-list { text-align: left; max-height: 300px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6; }
+.ver-title { font-weight: bold; color: var(--primary); margin-top: 10px; border-bottom: 1px solid #444; padding-bottom: 2px; }
+.ver-item { margin-left: 15px; position: relative; }
+.ver-item::before { content: "•"; position: absolute; left: -15px; color: var(--text-muted); }
 
 </style>
 </head>
@@ -77,19 +83,19 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 
 <nav class="sidebar">
   <div class="logo">
-    <i class="fas fa-satellite-dish"></i> RADAR <span style="font-size:0.5em; color:var(--accent); margin-top:5px;">V6.0</span>
+    <i class="fas fa-satellite-dish"></i> RADAR <span style="font-size:0.5em; color:var(--accent); margin-top:5px;">V8.0</span>
   </div>
 
   <div class="nav-head">MONITORING</div>
   <div class="nav-item active" onclick="app.setTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</div>
-  <div class="nav-item" onclick="app.setTab('analytics')"><i class="fas fa-chart-bar"></i> Analytics</div>
-  <div class="nav-item" onclick="app.setTab('data')"><i class="fas fa-table"></i> Data Log</div>
+  <div class="nav-item" onclick="app.setTab('data')"><i class="fas fa-table"></i> Data Log (Detail)</div>
 
-  <div class="nav-head">Laporan (PDF)</div>
+  <div class="nav-head">Laporan</div>
   <div class="nav-item" onclick="app.exportPDF()"><i class="fas fa-file-pdf"></i> Cetak PDQC-015</div>
   <div class="nav-item" onclick="app.exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</div>
 
   <div class="nav-head">System</div>
+  <div class="nav-item" onclick="app.showChangelog()"><i class="fas fa-history"></i> Version History</div>
   <div class="nav-item" onclick="app.toggleTheme()"><i class="fas fa-adjust"></i> Tema Terang/Gelap</div>
   <div class="nav-item" onclick="app.resetData()" style="color:var(--danger)"><i class="fas fa-trash"></i> Reset Data</div>
 
@@ -108,7 +114,7 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
   <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
     <div>
       <h1 style="font-size:1.8rem; font-weight:800;">QC Sampling Center</h1>
-      <div style="color:var(--text-muted);">Logic: A/R Precision | 5-Row Grid Layout</div>
+      <div style="color:var(--text-muted);">Logic: Min 67.0 | Max 73.0 (67.3 = OK)</div>
     </div>
     <button class="btn btn-p" onclick="app.simulate()"><i class="fas fa-sync"></i> SCAN BATCH (20 DATA)</button>
   </header>
@@ -127,16 +133,21 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
     <div class="card">
       <div style="color:var(--text-muted)">Status A/R</div>
       <div class="kpi-val" style="color:var(--warning)" id="kpiAR">--</div>
-      <div style="font-size:0.8rem;">Batch Terakhir</div>
+      <div style="font-size:0.8rem;">(Limit: Reject < 4)</div>
     </div>
     <div class="card">
-      <div style="color:var(--text-muted)">Process Capability</div>
-      <div class="kpi-val" style="color:var(--accent)" id="kpiCpkDash">--</div>
-      <div style="font-size:0.8rem;">Cpk (Target > 1.33)</div>
+      <div style="color:var(--text-muted)">Shift Extremes</div>
+      <div style="font-size:0.85rem; margin-top:10px;">
+        Max: <b id="statMax" class="val-ok">--</b>
+      </div>
+      <div style="font-size:0.85rem;">
+        Min: <b id="statMin" class="val-ok">--</b>
+      </div>
     </div>
 
     <div class="card span-2" style="min-height:300px;">
       <h3>Status 12 Jalur (Real-time)</h3>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">Merah = Ada sample reject di jalur ini. Angka = Rata-rata.</p>
       <div id="heatmapContainer" class="heatmap"></div>
     </div>
 
@@ -148,28 +159,8 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
     </div>
   </div>
 
-  <div id="view-analytics" class="grid-dash" style="display:none;">
-    <div class="card span-2">
-      <h3>Histogram (Bell Curve)</h3>
-      <div style="height:300px;"><canvas id="chartHisto"></canvas></div>
-    </div>
-    <div class="card span-2">
-      <h3>Six Sigma Metrics</h3>
-      <table class="sigma-table" style="width:100%; margin-top:20px;">
-        <tr><td>Total Sampel (N)</td><td id="statN">0</td></tr>
-        <tr><td>Mean (Rata-rata Total)</td><td id="statMean">0</td></tr>
-        <tr><td>Std Deviation (Sigma)</td><td id="statSigma">0</td></tr>
-        <tr><td>Max Value</td><td id="statMax">0</td></tr>
-        <tr><td>Min Value</td><td id="statMin">0</td></tr>
-        <tr><td>Range</td><td id="statRange">0</td></tr>
-        <tr><td style="border-top:2px solid #555">Process Capability (Cp)</td><td style="border-top:2px solid #555" id="statCp">0</td></tr>
-        <tr><td>Capability Index (Cpk)</td><td id="statCpk" style="color:var(--accent); font-size:1.2rem;">0</td></tr>
-      </table>
-    </div>
-  </div>
-
   <div id="view-data" class="card span-4" style="display:none;">
-    <h3 style="margin-bottom:1rem;">Database Sampling</h3>
+    <h3 style="margin-bottom:1rem;">Database Sampling (Detail)</h3>
     <div style="overflow-x:auto;">
       <table id="dataTable">
         <thead>
@@ -193,14 +184,14 @@ const app = {
   cfg: {
     std: 70.0,
     tol: 3.0,
-    min: 67.0, // Min diterima
-    max: 73.0, // Max diterima
+    min: 67.0, // Batas bawah AMAN
+    max: 73.0, // Batas atas AMAN
   },
   data: [],
   charts: {},
 
   init: () => {
-    const saved = localStorage.getItem('radar_v6_data');
+    const saved = localStorage.getItem('radar_v8_data');
     if(saved) app.data = JSON.parse(saved);
     app.initCharts();
     app.refreshUI();
@@ -209,7 +200,7 @@ const app = {
   simulate: () => {
     const hourIdx = app.data.length + 1;
     const isOdd = hourIdx % 2 !== 0;
-    let patternName = isOdd ? "Ganjil (3-2)" : "Genap (2-3)";
+    let patternName = isOdd ? "Ganjil" : "Genap";
     let counts = isOdd ? [3,3,3,3, 2,2,2,2] : [2,2,2,2, 3,3,3,3];
     while(counts.length < 12) counts.push(0);
 
@@ -229,19 +220,19 @@ const app = {
       
       for(let s=0; s<numSamples; s++) {
         // Berat Random (Dominan 67-73)
-        // Kadang muncul 68, 69, 72 (Aman)
-        let noise = (Math.random() - 0.5) * 4.0; // +/- 2.0
+        let noise = (Math.random() - 0.5) * 4.0; 
+        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4.5 : -4.5); // Sesekali Reject
         
-        // Sesekali outlier (Reject)
-        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4.5 : -4.5);
+        // Simulasi Khusus untuk membuktikan 67.3 Aman
+        if(Math.random() > 0.95) noise = -2.7; // 70 - 2.7 = 67.3
         
         let w = parseFloat((app.cfg.std + noise).toFixed(1));
         batch.lines[lineNum].push(w);
         batch.flat.push(w);
 
-        // LOGIKA REJECT PRESISI
+        // LOGIKA REJECT
         // Reject jika < 67 ATAU > 73
-        // 67, 68, 72, 73 ADALAH AMAN
+        // 67.0, 67.3, 73.0 ADALAH AMAN
         if(w < app.cfg.min || w > app.cfg.max) {
           batch.rejectCount++;
         }
@@ -251,9 +242,7 @@ const app = {
     let sum = batch.flat.reduce((a,b)=>a+b,0);
     batch.avg = batch.flat.length ? (sum / batch.flat.length).toFixed(1) : 0;
     
-    // Logika A/R
-    // Reject <= 3 --> Status A
-    // Reject >= 4 --> Status R
+    // A/R
     let statusChar = batch.rejectCount >= 4 ? "R" : "A";
     batch.arDisplay = `${batch.rejectCount}/${statusChar}`;
 
@@ -262,7 +251,7 @@ const app = {
     app.refreshUI();
     
     Swal.fire({
-      icon: 'success', title: `Data Jam ${hourIdx}`,
+      icon: 'success', title: `Batch Jam ${hourIdx}`,
       text: `Status: ${batch.arDisplay}`,
       timer: 1000, showConfirmButton: false
     });
@@ -281,54 +270,16 @@ const app = {
     document.getElementById('kpiStatus').innerText = last.rejectCount >= 4 ? "HOLD" : "RELEASE";
     document.getElementById('kpiStatus').className = `badge ${last.rejectCount >= 4 ? 'bg-ng' : 'bg-ok'}`;
 
+    // Stats Shift
+    let allRaw = app.data.flatMap(b => b.flat);
+    if(allRaw.length > 0) {
+      document.getElementById('statMax').innerText = Math.max(...allRaw);
+      document.getElementById('statMin').innerText = Math.min(...allRaw);
+    }
+
     app.renderHeatmap(last);
     app.updateCharts(); 
-    app.calculateSigma(); 
     app.renderTable();
-  },
-
-  calculateSigma: () => {
-    let allData = app.data.flatMap(b => b.flat);
-    if(allData.length < 2) return;
-    let n = allData.length;
-    let mean = allData.reduce((a,b)=>a+b,0) / n;
-    let variance = allData.reduce((a,b)=>a+Math.pow(b-mean,2),0) / n;
-    let stdDev = Math.sqrt(variance);
-    let max = Math.max(...allData);
-    let min = Math.min(...allData);
-    let range = max - min;
-    let Cp = (app.cfg.max - app.cfg.min) / (6 * stdDev);
-    let Cpu = (app.cfg.max - mean) / (3 * stdDev);
-    let Cpl = (mean - app.cfg.min) / (3 * stdDev);
-    let Cpk = Math.min(Cpu, Cpl);
-
-    document.getElementById('statN').innerText = n;
-    document.getElementById('statMean').innerText = mean.toFixed(2);
-    document.getElementById('statSigma').innerText = stdDev.toFixed(3);
-    document.getElementById('statMax').innerText = max;
-    document.getElementById('statMin').innerText = min;
-    document.getElementById('statRange').innerText = range.toFixed(1);
-    document.getElementById('statCp').innerText = Cp.toFixed(2);
-    document.getElementById('statCpk').innerText = Cpk.toFixed(2);
-    document.getElementById('kpiCpkDash').innerText = Cpk.toFixed(2);
-  },
-
-  updateCharts: () => {
-    const labels = app.data.map(b => `J${b.hour}`);
-    app.charts.trend.data.labels = labels;
-    app.charts.trend.data.datasets[0].data = app.data.map(b => b.avg);
-    app.charts.trend.update();
-
-    let allData = app.data.flatMap(b => b.flat);
-    let bins = {};
-    for(let i=65; i<=75; i+=0.5) bins[i.toFixed(1)] = 0;
-    allData.forEach(val => {
-      let key = (Math.round(val*2)/2).toFixed(1);
-      if(bins[key] !== undefined) bins[key]++;
-    });
-    app.charts.histo.data.labels = Object.keys(bins);
-    app.charts.histo.data.datasets[0].data = Object.values(bins);
-    app.charts.histo.update();
   },
 
   renderHeatmap: (batch) => {
@@ -341,6 +292,7 @@ const app = {
         let sum = batch.lines[i].reduce((a,b)=>a+b,0);
         let avg = (sum / batch.lines[i].length).toFixed(1);
         content = avg;
+        // Cek jika ada reject di jalur ini
         let hasReject = batch.lines[i].some(w => w < app.cfg.min || w > app.cfg.max);
         style = hasReject ? 'border-color:var(--danger); background:rgba(239,68,68,0.2);' : 'border-color:var(--accent); background:rgba(16,185,129,0.1);';
       }
@@ -353,17 +305,32 @@ const app = {
     tbody.innerHTML = '';
     [...app.data].reverse().forEach(b => {
       let cols = '';
-      for(let i=1; i<=8; i++) cols += `<td>${b.lines[i].join(', ')}</td>`;
-      tbody.innerHTML += `<tr><td>${b.hour}</td><td>${b.pattern.split('(')[0]}</td>${cols}<td style="font-weight:bold">${b.avg}</td><td style="font-weight:bold; color:${b.rejectCount>=4?'var(--danger)':'var(--accent)'}">${b.arDisplay}</td></tr>`;
+      for(let i=1; i<=8; i++) {
+        // RENDER ANGKA INDIVIDUAL DENGAN WARNA
+        let valHTML = b.lines[i].map(w => {
+           let isReject = w < app.cfg.min || w > app.cfg.max;
+           let colorClass = isReject ? 'val-ng' : 'val-ok';
+           return `<span class="${colorClass}">${w}</span>`;
+        }).join(', ');
+        
+        cols += `<td>${valHTML}</td>`;
+      }
+      tbody.innerHTML += `<tr><td>${b.hour}</td><td>${b.pattern}</td>${cols}<td style="font-weight:bold">${b.avg}</td><td style="font-weight:bold; color:${b.rejectCount>=4?'var(--danger)':'var(--accent)'}">${b.arDisplay}</td></tr>`;
     });
   },
 
-  // --- PDF ENGINE V6 (GRID LAYOUT FIX) ---
+  updateCharts: () => {
+    const labels = app.data.map(b => `J${b.hour}`);
+    app.charts.trend.data.labels = labels;
+    app.charts.trend.data.datasets[0].data = app.data.map(b => b.avg);
+    app.charts.trend.update();
+  },
+
+  // --- PDF ENGINE ---
   exportPDF: () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4');
 
-    // Header
     doc.setFontSize(10); doc.setFont("helvetica", "bold");
     doc.text("PT INDOFOOD CBP SUKSES MAKMUR Tbk", 14, 10);
     doc.setFontSize(8); doc.setFont("helvetica", "normal");
@@ -378,26 +345,18 @@ const app = {
     doc.text(`Flavour: GSS-USA 6x5 DPL`, 14, 40);
     doc.text(`Standar: 70g (67 - 73)`, 230, 35);
 
-    // --- STRUKTUR TABEL BARU (5 ROWS PER BATCH) ---
     let body = [];
-    
     app.data.forEach(b => {
-      // Kita buat 5 baris array untuk 1 Jam Data
-      // Agar terbentuk Grid 5 kotak vertikal
       let rowsForHour = [[], [], [], [], []];
-      
-      // Isi Kolom 1 (Jam), Kolom 2 (Nomor Sampel 1-5)
       for(let r=0; r<5; r++) {
         if(r===0) {
-          // Baris pertama bawa Info Jam, Avg, AR (Rowspan logic via library nanti, disini data raw)
-          rowsForHour[r].push({content: String(b.hour), rowSpan: 5, styles:{valign:'middle'}}); // Jam
-          rowsForHour[r].push(String(r+1)); // No 1
+          rowsForHour[r].push({content: String(b.hour), rowSpan: 5, styles:{valign:'middle'}});
+          rowsForHour[r].push(String(r+1)); 
         } else {
-          rowsForHour[r].push(String(r+1)); // No 2-5
+          rowsForHour[r].push(String(r+1));
         }
       }
 
-      // Isi Kolom Jalur 1-12
       for(let i=1; i<=12; i++) {
         let samples = b.lines[i] || [];
         for(let r=0; r<5; r++) {
@@ -405,12 +364,8 @@ const app = {
           rowsForHour[r].push(val);
         }
       }
-
-      // Isi Kolom Avg & A/R (Hanya di baris pertama dgn Rowspan)
       rowsForHour[0].push({content: String(b.avg), rowSpan: 5, styles:{valign:'middle'}});
       rowsForHour[0].push({content: String(b.arDisplay), rowSpan: 5, styles:{valign:'middle'}});
-
-      // Push ke Body PDF
       rowsForHour.forEach(r => body.push(r));
     });
 
@@ -424,32 +379,21 @@ const app = {
         {content: 'A / R', styles:{valign:'middle'}}
       ], ['','','1','2','3','4','5','6','7','8','9','10','11','12','','']],
       body: body,
-      theme: 'grid', // Grid memastikan semua sel ada border
-      styles: { 
-        fontSize: 8, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0],
-        halign: 'center', valign: 'middle' 
-      },
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0], halign: 'center', valign: 'middle' },
       headStyles: { fillColor: [220, 220, 220], textColor: [0,0,0], fontStyle: 'bold' },
-      
-      // LOGIKA WARNA MERAH PRESISI
       didParseCell: function(data) {
-        // Cek Data Jalur (Kolom index 2 s/d 13)
-        // Ingat, kolom 0=Jam, 1=No
         if (data.section === 'body' && data.column.index >= 2 && data.column.index <= 13) {
           let text = data.cell.raw; 
           if (text && text !== "") {
             let val = parseFloat(text);
-            // MERAH JIKA < 67 ATAU > 73
-            // 67.0 Aman, 73.0 Aman
             if(val < app.cfg.min || val > app.cfg.max) {
               data.cell.styles.textColor = [255, 0, 0];
               data.cell.styles.fontStyle = 'bold';
             }
           }
         }
-        // Warna Merah Kolom A/R (Index 15)
         if (data.section === 'body' && data.column.index === 15) {
-           // Jika ada string/object, kita cek isinya
            let content = typeof data.cell.raw === 'object' ? data.cell.raw.content : data.cell.raw;
            if(content && content.includes('/R')) {
              data.cell.styles.textColor = [255, 0, 0];
@@ -459,7 +403,6 @@ const app = {
       }
     });
 
-    // FOOTER
     let fy = doc.lastAutoTable.finalY + 5;
     let allRaw = app.data.flatMap(b => b.flat);
     let allAvgs = app.data.map(b => parseFloat(b.avg));
@@ -476,12 +419,57 @@ const app = {
     }
     doc.text("Dibuat Oleh: QC Field", 180, fy + 10);
     doc.text("Diketahui: SPV QC", 240, fy + 10);
-    doc.save(`PDQC015_FINAL_${Date.now()}.pdf`);
+    doc.save(`PDQC015_HISTORY_${Date.now()}.pdf`);
+  },
+
+  // --- CHANGELOG MODAL ---
+  showChangelog: () => {
+    Swal.fire({
+      title: 'RADAR System Evolution',
+      html: `
+        <div class="changelog-list">
+          <div class="ver-title">V1.0 - BASIC</div>
+          <div class="ver-item">Basic Sampling System (Mobile/ESP32).</div>
+          <div class="ver-item">Pola Ganjil/Genap Awal (33332222).</div>
+          
+          <div class="ver-title">V2.0 - PRO</div>
+          <div class="ver-item">Web-based Dashboard.</div>
+          <div class="ver-item">Fitur Six Sigma (Cp, Cpk) & Histogram.</div>
+          <div class="ver-item">LocalStorage Database (Anti-Hilang).</div>
+
+          <div class="ver-title">V3.0 - ULTIMATE</div>
+          <div class="ver-item">Adaptive PDF (Layout 12 Jalur Baku).</div>
+          <div class="ver-item">Indikator Merah untuk Berat <67 atau >73.</div>
+
+          <div class="ver-title">V4.0 - PRECISION</div>
+          <div class="ver-item">Logika A/R Baru (Reject < 4 = A, >= 4 = R).</div>
+          <div class="ver-item">PDF Layout Grid 5 Baris (Rapi).</div>
+
+          <div class="ver-title">V5.0 - PLATINUM</div>
+          <div class="ver-item">Penggabungan Fitur Analytics V2 + Presisi PDF V4.</div>
+          <div class="ver-item">Summary Shift (Max, Min, Avg) di Footer PDF.</div>
+
+          <div class="ver-title">V6.0 - FINAL</div>
+          <div class="ver-item">Perbaikan Garis (Border) pada setiap sel PDF.</div>
+          <div class="ver-item">Perbaikan Logika Merah (Strict Out of Range).</div>
+
+          <div class="ver-title">V7.0 - PERFECTED</div>
+          <div class="ver-item">Visual Dashboard (Warna Angka vs Warna Kotak).</div>
+          <div class="ver-item">Fix Validasi: 67.3 dianggap AMAN (Hijau).</div>
+          
+          <div class="ver-title">V8.0 - HISTORY (CURRENT)</div>
+          <div class="ver-item">Penambahan Menu Changelog/History.</div>
+          <div class="ver-item">Penyempurnaan Stabilitas Sistem.</div>
+        </div>
+      `,
+      confirmButtonText: 'Tutup',
+      width: '600px'
+    });
   },
 
   exportExcel: () => {
     const wb = XLSX.utils.book_new();
-    let wsData = [ ["PT INDOFOOD CBP"], ["DATA QC RADAR V6.0"], ["Jam", "Pola", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "Avg", "A/R"] ];
+    let wsData = [ ["PT INDOFOOD CBP"], ["DATA QC RADAR V8.0"], ["Jam", "Pola", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "Avg", "A/R"] ];
     app.data.forEach(b => {
       wsData.push([ b.hour, b.pattern, b.lines[1].join(' '), b.lines[2].join(' '), b.lines[3].join(' '), b.lines[4].join(' '), b.lines[5].join(' '), b.lines[6].join(' '), b.lines[7].join(' '), b.lines[8].join(' '), b.avg, b.arDisplay ]);
     });
@@ -494,15 +482,12 @@ const app = {
     app.charts.trend = new Chart(document.getElementById('chartMain'), {
       type: 'line', data: { labels: [], datasets: [ { label: 'Avg', data: [], borderColor: '#3b82f6', tension:0.3 }, { label: 'Max (73)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }, { label: 'Min (67)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 } ] }, options: { responsive:true, maintainAspectRatio:false, scales:{y:{min:65, max:75}} }
     });
-    app.charts.histo = new Chart(document.getElementById('chartHisto'), {
-      type: 'bar', data: { labels: [], datasets: [{ label: 'Frekuensi', data: [], backgroundColor: '#10b981' }] }, options: { responsive:true, maintainAspectRatio:false }
-    });
   },
   
-  save: () => localStorage.setItem('radar_v6_data', JSON.stringify(app.data)),
+  save: () => localStorage.setItem('radar_v8_data', JSON.stringify(app.data)),
   resetData: () => { Swal.fire({title:'Hapus Data?', icon:'warning', showCancelButton:true}).then(r=>{ if(r.isConfirmed) { app.data=[]; app.save(); location.reload(); } }) },
   toggleTheme: () => { const b = document.body; b.hasAttribute('data-theme') ? b.removeAttribute('data-theme') : b.setAttribute('data-theme','light'); },
-  setTab: (t) => { document.getElementById('view-dashboard').style.display = t==='dashboard'?'grid':'none'; document.getElementById('view-data').style.display = t==='data'?'block':'none'; document.getElementById('view-analytics').style.display = t==='analytics'?'grid':'none'; }
+  setTab: (t) => { document.getElementById('view-dashboard').style.display = t==='dashboard'?'grid':'none'; document.getElementById('view-data').style.display = t==='data'?'block':'none'; }
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
