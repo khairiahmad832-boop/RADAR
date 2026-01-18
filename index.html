@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADAR V3.0 ULTIMATE | QC System</title>
+<title>RADAR V5.0 PLATINUM | QC Analytics</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -29,11 +29,12 @@
 * { margin:0; padding:0; box-sizing:border-box; transition: background 0.3s; }
 body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
-/* LAYOUT & COMPONENT */
+/* LAYOUT */
 .sidebar { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
 .main { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
 .backdrop { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%); }
 
+/* COMPONENT */
 .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
 .nav-item { padding: 12px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-weight: 500; display: flex; gap: 10px; align-items: center; }
 .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
@@ -48,12 +49,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(
 .bg-ok { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
 .bg-ng { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-/* HEATMAP 12 LANES */
+/* HEATMAP */
 .heatmap { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 15px; }
 .lane-box { aspect-ratio: 1.2; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); position: relative; }
-.lane-active { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
 .lane-val { font-weight: bold; font-size: 1rem; }
 .lane-n { position: absolute; top: 2px; left: 4px; font-size: 0.6rem; opacity: 0.7; }
+
+/* ANALYTICS TABLE */
+.sigma-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+.sigma-table td:last-child { text-align: right; font-weight: bold; font-family: 'JetBrains Mono'; }
 
 /* TABLE */
 table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
@@ -63,7 +67,6 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 /* BUTTONS */
 .btn { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
 .btn-p { background: var(--primary); color: #fff; }
-.btn-o { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
 .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
 </style>
@@ -74,11 +77,12 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 
 <nav class="sidebar">
   <div class="logo">
-    <i class="fas fa-radar"></i> RADAR <span style="font-size:0.5em; color:var(--accent); margin-top:5px;">V3.0</span>
+    <i class="fas fa-satellite-dish"></i> RADAR <span style="font-size:0.5em; color:var(--accent); margin-top:5px;">V5.0</span>
   </div>
 
   <div class="nav-head">MONITORING</div>
   <div class="nav-item active" onclick="app.setTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</div>
+  <div class="nav-item" onclick="app.setTab('analytics')"><i class="fas fa-chart-bar"></i> Analytics (Sigma)</div>
   <div class="nav-item" onclick="app.setTab('data')"><i class="fas fa-table"></i> Data Log</div>
 
   <div class="nav-head">Laporan (PDF)</div>
@@ -91,9 +95,11 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 
   <div style="margin-top:auto;">
     <div class="card" style="padding:15px; font-size:0.8rem; border:1px solid var(--primary);">
-      <div style="color:var(--text-muted)">Active Line</div>
-      <div style="font-weight:bold; font-size:1.1rem; color:var(--primary)">LINE 8 (Aktif)</div>
-      <div style="font-size:0.7rem; opacity:0.7; margin-top:5px;">Jalur 9-12 Kosong</div>
+      <div style="color:var(--text-muted)">Active Flavour</div>
+      <div style="font-weight:bold; font-size:0.9rem; color:var(--primary)">GSS-USA 6x5 DPL</div>
+      <div style="font-size:0.7rem; opacity:0.7; margin-top:5px; border-top:1px solid #444; padding-top:5px;">
+        Std: 70g (67 - 73g)
+      </div>
     </div>
   </div>
 </nav>
@@ -102,7 +108,7 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
   <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
     <div>
       <h1 style="font-size:1.8rem; font-weight:800;">QC Sampling Center</h1>
-      <div style="color:var(--text-muted);">Target: 70g | Tol: ±3g | Sampel: 20pcs</div>
+      <div style="color:var(--text-muted);">Logic: A/R Precision | Six Sigma Analytics</div>
     </div>
     <button class="btn btn-p" onclick="app.simulate()"><i class="fas fa-sync"></i> SCAN BATCH (20 DATA)</button>
   </header>
@@ -114,25 +120,24 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
       <div class="badge bg-ok" id="kpiStatus">READY</div>
     </div>
     <div class="card">
-      <div style="color:var(--text-muted)">Total Reject (Shift)</div>
+      <div style="color:var(--text-muted)">Reject Shift Ini</div>
       <div class="kpi-val" style="color:var(--danger)" id="kpiRej">0</div>
       <div style="font-size:0.8rem;">Pcs Out of Spec</div>
     </div>
     <div class="card">
-      <div style="color:var(--text-muted)">Pola Sampling</div>
-      <div style="font-size:1.2rem; font-weight:bold; color:var(--warning); margin-top:5px;" id="kpiPattern">--</div>
-      <div style="font-size:0.8rem;">Rotasi Jam Ganjil/Genap</div>
+      <div style="color:var(--text-muted)">Status A/R</div>
+      <div class="kpi-val" style="color:var(--warning)" id="kpiAR">--</div>
+      <div style="font-size:0.8rem;">Batch Terakhir</div>
     </div>
     <div class="card">
-      <div style="color:var(--text-muted)">Accept / Reject Rate</div>
-      <div class="kpi-val" style="color:var(--accent)" id="kpiAR">--/--</div>
-      <div style="font-size:0.8rem;">Batch Terakhir</div>
+      <div style="color:var(--text-muted)">Process Capability</div>
+      <div class="kpi-val" style="color:var(--accent)" id="kpiCpkDash">--</div>
+      <div style="font-size:0.8rem;">Cpk (Target > 1.33)</div>
     </div>
 
     <div class="card span-2" style="min-height:300px;">
       <h3>Status 12 Jalur (Real-time)</h3>
-      <div id="heatmapContainer" class="heatmap">
-        </div>
+      <div id="heatmapContainer" class="heatmap"></div>
     </div>
 
     <div class="card span-2">
@@ -140,6 +145,28 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
       <div style="height:250px;">
         <canvas id="chartMain"></canvas>
       </div>
+    </div>
+  </div>
+
+  <div id="view-analytics" class="grid-dash" style="display:none;">
+    <div class="card span-2">
+      <h3>Histogram (Bell Curve)</h3>
+      <div style="height:300px;">
+        <canvas id="chartHisto"></canvas>
+      </div>
+    </div>
+    <div class="card span-2">
+      <h3>Six Sigma Metrics</h3>
+      <table class="sigma-table" style="width:100%; margin-top:20px;">
+        <tr><td>Total Sampel (N)</td><td id="statN">0</td></tr>
+        <tr><td>Mean (Rata-rata Total)</td><td id="statMean">0</td></tr>
+        <tr><td>Std Deviation (Sigma)</td><td id="statSigma">0</td></tr>
+        <tr><td>Max Value</td><td id="statMax">0</td></tr>
+        <tr><td>Min Value</td><td id="statMin">0</td></tr>
+        <tr><td>Range</td><td id="statRange">0</td></tr>
+        <tr><td style="border-top:2px solid #555">Process Capability (Cp)</td><td style="border-top:2px solid #555" id="statCp">0</td></tr>
+        <tr><td>Capability Index (Cpk)</td><td id="statCpk" style="color:var(--accent); font-size:1.2rem;">0</td></tr>
+      </table>
     </div>
   </div>
 
@@ -153,7 +180,6 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
             <th>Pola</th>
             <th>J1</th><th>J2</th><th>J3</th><th>J4</th>
             <th>J5</th><th>J6</th><th>J7</th><th>J8</th>
-            <th>J9-12</th>
             <th>Avg</th>
             <th>A/R</th>
           </tr>
@@ -166,87 +192,71 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 
 <script>
 const app = {
-  // CONFIG
   cfg: {
     std: 70.0,
-    tol: 3.0, // Min 67, Max 73
-    activeLines: 8, // Hanya 8 jalur yang diisi
-    maxLines: 12    // Tapi laporan tetap 12 jalur
+    tol: 3.0,
+    min: 67.0,
+    max: 73.0,
   },
   data: [],
-  chart: null,
+  charts: {},
 
   init: () => {
-    // Load Data
-    const saved = localStorage.getItem('radar_v3_data');
+    const saved = localStorage.getItem('radar_v5_data');
     if(saved) app.data = JSON.parse(saved);
-    
-    app.initChart();
+    app.initCharts();
     app.refreshUI();
   },
 
-  // --- LOGIKA UTAMA (SIMULASI ROTASI) ---
+  // --- LOGIKA SIMULASI V4 (ROTASI PRESISI) ---
   simulate: () => {
     const hourIdx = app.data.length + 1;
     const isOdd = hourIdx % 2 !== 0;
-    
-    // DEFINISI POLA (Sesuai Request)
-    // Ganjil: J1-4 (3 sample), J5-8 (2 sample)
-    // Genap : J1-4 (2 sample), J5-8 (3 sample)
-    // Jalur 9-12: 0 sample
-    
-    let patternName = isOdd ? "Ganjil (3-3-3-3 | 2-2-2-2)" : "Genap (2-2-2-2 | 3-3-3-3)";
+    let patternName = isOdd ? "Ganjil (3-2)" : "Genap (2-3)";
     let counts = isOdd ? [3,3,3,3, 2,2,2,2] : [2,2,2,2, 3,3,3,3];
-    
-    // Pastikan array counts punya 12 elemen (sisanya 0)
     while(counts.length < 12) counts.push(0);
 
     let batch = {
       id: Date.now(),
       hour: hourIdx,
       pattern: patternName,
-      lines: {}, // Object untuk menyimpan array berat per jalur
+      lines: {}, 
       flat: [],
       rejectCount: 0
     };
 
-    // GENERATE DATA
     for(let l=0; l<12; l++) {
       let lineNum = l+1;
       batch.lines[lineNum] = [];
-      
-      let numSamples = counts[l]; // Ambil jumlah sampel untuk jalur ini
+      let numSamples = counts[l];
       
       for(let s=0; s<numSamples; s++) {
-        // Random Weight Logic (67-73 is OK)
-        // Simulasi sesekali reject
-        let noise = (Math.random() - 0.5) * 4; // +/- 2 variasi normal
-        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4.5 : -4.5); // Outlier force
+        let noise = (Math.random() - 0.5) * 3.5; 
+        if(Math.random() > 0.9) noise = (Math.random() > 0.5 ? 4.0 : -4.0); // Outlier
         
         let w = parseFloat((app.cfg.std + noise).toFixed(1));
         batch.lines[lineNum].push(w);
         batch.flat.push(w);
 
-        // Cek Reject
-        if(w < (app.cfg.std - app.cfg.tol) || w > (app.cfg.std + app.cfg.tol)) {
-          batch.rejectCount++;
-        }
+        if(w < app.cfg.min || w > app.cfg.max) batch.rejectCount++;
       }
     }
 
-    // STATS
     let sum = batch.flat.reduce((a,b)=>a+b,0);
     batch.avg = batch.flat.length ? (sum / batch.flat.length).toFixed(1) : 0;
-    batch.acceptCount = 20 - batch.rejectCount;
+    
+    // Logika V4 (A/R)
+    let statusChar = batch.rejectCount >= 4 ? "R" : "A";
+    batch.arDisplay = `${batch.rejectCount}/${statusChar}`;
 
     app.data.push(batch);
     app.save();
     app.refreshUI();
     
     Swal.fire({
-      icon: 'success', title: `Batch Jam ${hourIdx} Masuk`,
-      text: `${patternName} - Total 20 Sampel`,
-      timer: 1500, showConfirmButton: false
+      icon: 'success', title: `Data Jam ${hourIdx}`,
+      text: `Status: ${batch.arDisplay}`,
+      timer: 1000, showConfirmButton: false
     });
   },
 
@@ -259,20 +269,78 @@ const app = {
 
     const last = app.data[app.data.length-1];
     
-    // KPI
+    // KPI Updates
     document.getElementById('kpiAvg').innerText = last.avg;
-    document.getElementById('kpiStatus').innerText = last.rejectCount === 0 ? "NORMAL" : "WARNING";
-    document.getElementById('kpiStatus').className = `badge ${last.rejectCount === 0 ? 'bg-ok' : 'bg-ng'}`;
-    document.getElementById('kpiPattern').innerText = last.pattern;
-    
-    // Hitung Total Reject Shift
-    let totalRej = app.data.reduce((a,b) => a + b.rejectCount, 0);
-    document.getElementById('kpiRej').innerText = totalRej;
-    document.getElementById('kpiAR').innerText = `${last.acceptCount}/${last.rejectCount}`;
+    document.getElementById('kpiRej').innerText = last.rejectCount;
+    document.getElementById('kpiAR').innerText = last.arDisplay;
+    document.getElementById('kpiStatus').innerText = last.rejectCount >= 4 ? "HOLD" : "RELEASE";
+    document.getElementById('kpiStatus').className = `badge ${last.rejectCount >= 4 ? 'bg-ng' : 'bg-ok'}`;
 
     app.renderHeatmap(last);
-    app.updateChart();
+    app.updateCharts(); // Update Trend & Histogram
+    app.calculateSigma(); // Hitung Six Sigma V2
     app.renderTable();
+  },
+
+  // --- SIX SIGMA CALCULATOR (KEMBALI DARI V2) ---
+  calculateSigma: () => {
+    let allData = app.data.flatMap(b => b.flat);
+    if(allData.length < 2) return;
+
+    let n = allData.length;
+    let mean = allData.reduce((a,b)=>a+b,0) / n;
+    let variance = allData.reduce((a,b)=>a+Math.pow(b-mean,2),0) / n;
+    let stdDev = Math.sqrt(variance);
+    
+    let max = Math.max(...allData);
+    let min = Math.min(...allData);
+    let range = max - min;
+
+    // Cp & Cpk
+    let USL = app.cfg.max;
+    let LSL = app.cfg.min;
+    
+    let Cp = (USL - LSL) / (6 * stdDev);
+    let Cpu = (USL - mean) / (3 * stdDev);
+    let Cpl = (mean - LSL) / (3 * stdDev);
+    let Cpk = Math.min(Cpu, Cpl);
+
+    // Update UI Analytics
+    document.getElementById('statN').innerText = n;
+    document.getElementById('statMean').innerText = mean.toFixed(2);
+    document.getElementById('statSigma').innerText = stdDev.toFixed(3);
+    document.getElementById('statMax').innerText = max;
+    document.getElementById('statMin').innerText = min;
+    document.getElementById('statRange').innerText = range.toFixed(1);
+    document.getElementById('statCp').innerText = Cp.toFixed(2);
+    document.getElementById('statCpk').innerText = Cpk.toFixed(2);
+    
+    // Update KPI Dashboard Cpk
+    document.getElementById('kpiCpkDash').innerText = Cpk.toFixed(2);
+  },
+
+  updateCharts: () => {
+    // 1. Trend Chart
+    const labels = app.data.map(b => `J${b.hour}`);
+    app.charts.trend.data.labels = labels;
+    app.charts.trend.data.datasets[0].data = app.data.map(b => b.avg);
+    app.charts.trend.update();
+
+    // 2. Histogram (Bell Curve)
+    let allData = app.data.flatMap(b => b.flat);
+    let bins = {};
+    // Buat bin per 0.5 gram
+    for(let i=65; i<=75; i+=0.5) bins[i.toFixed(1)] = 0;
+    
+    allData.forEach(val => {
+      // Round to nearest 0.5
+      let key = (Math.round(val*2)/2).toFixed(1);
+      if(bins[key] !== undefined) bins[key]++;
+    });
+
+    app.charts.histo.data.labels = Object.keys(bins);
+    app.charts.histo.data.datasets[0].data = Object.values(bins);
+    app.charts.histo.update();
   },
 
   renderHeatmap: (batch) => {
@@ -281,75 +349,33 @@ const app = {
     
     for(let i=1; i<=12; i++) {
       let content = '-';
-      let colorClass = '';
-      
+      let style = '';
       if(batch && batch.lines[i] && batch.lines[i].length > 0) {
-        // Tampilkan Rata-rata jalur tersebut
         let sum = batch.lines[i].reduce((a,b)=>a+b,0);
         let avg = (sum / batch.lines[i].length).toFixed(1);
         content = avg;
-        
-        // Cek apakah ada reject di jalur ini?
-        let hasReject = batch.lines[i].some(w => w < 67 || w > 73);
-        colorClass = hasReject ? 'background:rgba(239,68,68,0.2); border-color:var(--danger);' : 'lane-active';
+        let hasReject = batch.lines[i].some(w => w < app.cfg.min || w > app.cfg.max);
+        style = hasReject ? 'border-color:var(--danger); background:rgba(239,68,68,0.2);' : 'border-color:var(--accent); background:rgba(16,185,129,0.1);';
       }
-
-      let html = `
-        <div class="lane-box" style="${colorClass}">
-          <div class="lane-n">J${i}</div>
-          <div class="lane-val">${content}</div>
-        </div>
-      `;
-      container.innerHTML += html;
+      container.innerHTML += `<div class="lane-box" style="${style}"><div class="lane-n">J${i}</div><div class="lane-val">${content}</div></div>`;
     }
   },
 
   renderTable: () => {
     const tbody = document.querySelector('#dataTable tbody');
     tbody.innerHTML = '';
-    
     [...app.data].reverse().forEach(b => {
-      // Buat string ringkas per jalur
       let cols = '';
-      for(let i=1; i<=8; i++) {
-        let vals = b.lines[i].join(', ');
-        cols += `<td style="font-size:0.7rem">${vals}</td>`;
-      }
-      
-      let html = `
-        <tr>
-          <td>${b.hour}</td>
-          <td>${b.pattern.split('(')[0]}</td>
-          ${cols}
-          <td style="color:#666; font-size:0.7rem;">(Kosong)</td>
-          <td style="font-weight:bold">${b.avg}</td>
-          <td>${b.acceptCount}/${b.rejectCount}</td>
-        </tr>
-      `;
-      tbody.innerHTML += html;
+      for(let i=1; i<=8; i++) cols += `<td>${b.lines[i].join(', ')}</td>`;
+      tbody.innerHTML += `<tr><td>${b.hour}</td><td>${b.pattern.split('(')[0]}</td>${cols}<td style="font-weight:bold">${b.avg}</td><td style="font-weight:bold; color:${b.rejectCount>=4?'var(--danger)':'var(--accent)'}">${b.arDisplay}</td></tr>`;
     });
   },
 
-  updateChart: () => {
-    const labels = app.data.map(b => `Jam ${b.hour}`);
-    const data = app.data.map(b => b.avg);
-    
-    app.chart.data.labels = labels;
-    app.chart.data.datasets[0].data = data;
-    
-    // Garis Batas
-    app.chart.data.datasets[1].data = Array(labels.length).fill(73);
-    app.chart.data.datasets[2].data = Array(labels.length).fill(67);
-    
-    app.chart.update();
-  },
-
-  // --- PDF ENGINE (SESUAI REQUEST) ---
+  // --- PDF ENGINE (V4.0 PRECISION) ---
   exportPDF: () => {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+    const doc = new jsPDF('l', 'mm', 'a4');
 
-    // Header Standar
     doc.setFontSize(10); doc.setFont("helvetica", "bold");
     doc.text("PT INDOFOOD CBP SUKSES MAKMUR Tbk", 14, 10);
     doc.setFontSize(8); doc.setFont("helvetica", "normal");
@@ -361,149 +387,106 @@ const app = {
     
     doc.setFontSize(9); doc.setFont("helvetica", "normal");
     doc.text(`Tanggal: ${new Date().toLocaleDateString()}`, 14, 35);
-    doc.text(`Standar: 70g (Min 67 - Max 73)`, 230, 35);
+    doc.text(`Flavour: GSS-USA 6x5 DPL`, 14, 40);
+    doc.text(`Standar: 70g (67 - 73)`, 230, 35);
 
-    // BUILD DATA TABLE
     let body = [];
-    
     app.data.forEach(b => {
-      let row = [];
-      row.push(b.hour);         // Jam
-      row.push("20");           // Sampel Size
-      
-      // Loop Jalur 1 sampai 12
+      let row = [b.hour, "20"]; 
       for(let i=1; i<=12; i++) {
         let samples = b.lines[i] || [];
-        // Join angka dengan Spasi/Koma agar muat di kolom
-        // Jika kosong, string kosong
-        row.push(samples.join('\n')); 
+        let displaySamples = [...samples];
+        while(displaySamples.length < 5) displaySamples.push("");
+        row.push(displaySamples.join('\n'));
       }
-      
-      row.push(b.avg);          // Rata-rata
-      row.push(`${b.acceptCount}/${b.rejectCount}`); // A/R
-      
+      row.push(b.avg);
+      row.push(b.arDisplay);
       body.push(row);
     });
 
     doc.autoTable({
       startY: 45,
-      // STRUKTUR HEADER SESUAI GAMBAR MANUAL
-      head: [
-        [
-          {content: 'Jam', rowSpan: 2, styles:{valign:'middle'}},
-          {content: 'Jml\nSmpl', rowSpan: 2, styles:{valign:'middle'}},
-          {content: 'DATA BERAT PER JALUR (gram)', colSpan: 12, styles:{halign:'center'}},
-          {content: 'Rata\nRata', rowSpan: 2, styles:{valign:'middle'}},
-          {content: 'A / R', rowSpan: 2, styles:{valign:'middle'}}
-        ],
-        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
-      ],
+      head: [[
+        {content: 'Jam', rowSpan: 2, styles:{valign:'middle'}},
+        {content: 'Jml', rowSpan: 2, styles:{valign:'middle'}},
+        {content: 'DATA BERAT PER JALUR (gram)', colSpan: 12, styles:{halign:'center'}},
+        {content: 'Rata\nRata', rowSpan: 2, styles:{valign:'middle'}},
+        {content: 'A / R', rowSpan: 2, styles:{valign:'middle'}}
+      ], ['1','2','3','4','5','6','7','8','9','10','11','12']],
       body: body,
       theme: 'grid',
-      styles: { 
-        fontSize: 7, // Font kecil agar muat 12 jalur
-        cellPadding: 2, 
-        lineColor: [0,0,0], 
-        lineWidth: 0.1,
-        textColor: [0,0,0],
-        halign: 'center',
-        valign: 'middle'
-      },
+      styles: { fontSize: 7, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0], halign: 'center', valign: 'middle' },
       headStyles: { fillColor: [220, 220, 220], textColor: [0,0,0], fontStyle: 'bold' },
-      
-      // LOGIKA WARNA MERAH UNTUK REJECT
       didParseCell: function(data) {
-        // Cek jika kolom adalah data jalur (index 2 sampai 13)
         if (data.section === 'body' && data.column.index >= 2 && data.column.index <= 13) {
-          let text = data.cell.raw; // Isi sel, misal "70\n71\n65"
+          let text = data.cell.raw; 
           if (text) {
-            // Pecah string jadi angka
-            let nums = text.toString().split('\n').map(Number);
-            // Cek apakah ada yg reject?
-            let hasReject = nums.some(n => n < 67 || n > 73);
-            if(hasReject) {
-              data.cell.styles.textColor = [255, 0, 0]; // Merah
-              data.cell.styles.fontStyle = 'bold';
-            }
+            let nums = text.toString().split('\n');
+            let hasOOS = false;
+            nums.forEach(n => {
+              if(n !== "") {
+                let val = parseFloat(n);
+                if(val < app.cfg.min || val > app.cfg.max) hasOOS = true;
+              }
+            });
+            if(hasOOS) { data.cell.styles.textColor = [255, 0, 0]; data.cell.styles.fontStyle = 'bold'; }
           }
         }
-        // Warna merah juga untuk kolom A/R jika ada Reject
         if (data.section === 'body' && data.column.index === 15) {
-           let ar = data.cell.raw.split('/'); // "19/1"
-           if(parseInt(ar[1]) > 0) {
-             data.cell.styles.textColor = [255, 0, 0];
-           }
+           if(data.cell.raw.includes('/R')) { data.cell.styles.textColor = [255, 0, 0]; data.cell.styles.fontStyle = 'bold'; }
         }
       }
     });
 
-    // FOOTER
-    let fy = doc.lastAutoTable.finalY + 10;
-    doc.text("Keterangan: Angka Merah = Out of Spec", 14, fy);
-    doc.text("Dibuat Oleh: QC Field", 180, fy);
-    doc.text("Diketahui: SPV QC", 240, fy);
-
-    doc.save(`PDQC015_ULTIMATE_${Date.now()}.pdf`);
+    let fy = doc.lastAutoTable.finalY + 5;
+    let allRaw = app.data.flatMap(b => b.flat);
+    let allAvgs = app.data.map(b => parseFloat(b.avg));
+    if(allRaw.length > 0) {
+      let sMax = Math.max(...allRaw);
+      let sMin = Math.min(...allRaw);
+      let sAvg = (allAvgs.reduce((a,b)=>a+b,0) / allAvgs.length).toFixed(1);
+      doc.setFontSize(8); doc.setFont("helvetica", "bold");
+      doc.text(`SUMMARY SHIFT:`, 14, fy + 5);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Berat Tertinggi: ${sMax}`, 14, fy + 10);
+      doc.text(`Berat Terendah: ${sMin}`, 60, fy + 10);
+      doc.text(`Rata-rata Shift: ${sAvg}`, 110, fy + 10);
+    }
+    doc.text("Dibuat Oleh: QC Field", 180, fy + 10);
+    doc.text("Diketahui: SPV QC", 240, fy + 10);
+    doc.save(`PDQC015_PLATINUM_${Date.now()}.pdf`);
   },
 
   exportExcel: () => {
     const wb = XLSX.utils.book_new();
-    let wsData = [
-      ["PT INDOFOOD CBP SUKSES MAKMUR Tbk"],
-      ["DATA QC - RADAR V3.0"],
-      [""],
-      ["Jam", "Pola", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9", "J10", "J11", "J12", "Avg", "A/R"]
-    ];
-    
+    let wsData = [ ["PT INDOFOOD CBP"], ["DATA QC RADAR V5.0"], ["Jam", "Pola", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "Avg", "A/R"] ];
     app.data.forEach(b => {
-      let row = [
-        b.hour, b.pattern,
-        b.lines[1].join(','), b.lines[2].join(','), b.lines[3].join(','), b.lines[4].join(','),
-        b.lines[5].join(','), b.lines[6].join(','), b.lines[7].join(','), b.lines[8].join(','),
-        "", "", "", "", // J9-12 Kosong
-        b.avg, `${b.acceptCount}/${b.rejectCount}`
-      ];
-      wsData.push(row);
+      wsData.push([ b.hour, b.pattern, b.lines[1].join(' '), b.lines[2].join(' '), b.lines[3].join(' '), b.lines[4].join(' '), b.lines[5].join(' '), b.lines[6].join(' '), b.lines[7].join(' '), b.lines[8].join(' '), b.avg, b.arDisplay ]);
     });
-
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, "QC Data");
-    XLSX.writeFile(wb, "RADAR_Data.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(wb, "RADAR_Export.xlsx");
   },
 
-  // UTILS
-  initChart: () => {
-    const ctx = document.getElementById('chartMain').getContext('2d');
-    app.chart = new Chart(ctx, {
-      type: 'line',
-      data: { 
-        labels: [], 
-        datasets: [
-          { label: 'Avg', data: [], borderColor: '#3b82f6', tension:0.3 },
-          { label: 'Max (73)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 },
-          { label: 'Min (67)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }
-        ] 
-      },
-      options: { responsive:true, maintainAspectRatio:false, scales:{y:{min:65, max:75}} }
+  initCharts: () => {
+    app.charts.trend = new Chart(document.getElementById('chartMain'), {
+      type: 'line', data: { labels: [], datasets: [ { label: 'Avg', data: [], borderColor: '#3b82f6', tension:0.3 }, { label: 'Max (73)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }, { label: 'Min (67)', data: [], borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 } ] }, options: { responsive:true, maintainAspectRatio:false, scales:{y:{min:65, max:75}} }
+    });
+    app.charts.histo = new Chart(document.getElementById('chartHisto'), {
+      type: 'bar', data: { labels: [], datasets: [{ label: 'Frekuensi', data: [], backgroundColor: '#10b981' }] }, options: { responsive:true, maintainAspectRatio:false }
     });
   },
   
-  save: () => localStorage.setItem('radar_v3_data', JSON.stringify(app.data)),
+  save: () => localStorage.setItem('radar_v5_data', JSON.stringify(app.data)),
   
-  resetData: () => {
-    Swal.fire({title:'Hapus Data?', icon:'warning', showCancelButton:true}).then(r=>{
-      if(r.isConfirmed) { app.data=[]; app.save(); location.reload(); }
-    })
-  },
+  resetData: () => { Swal.fire({title:'Hapus Data?', icon:'warning', showCancelButton:true}).then(r=>{ if(r.isConfirmed) { app.data=[]; app.save(); location.reload(); } }) },
   
-  toggleTheme: () => {
-    const b = document.body;
-    b.hasAttribute('data-theme') ? b.removeAttribute('data-theme') : b.setAttribute('data-theme','light');
-  },
+  toggleTheme: () => { const b = document.body; b.hasAttribute('data-theme') ? b.removeAttribute('data-theme') : b.setAttribute('data-theme','light'); },
   
   setTab: (t) => {
     document.getElementById('view-dashboard').style.display = t==='dashboard'?'grid':'none';
     document.getElementById('view-data').style.display = t==='data'?'block':'none';
+    document.getElementById('view-analytics').style.display = t==='analytics'?'grid':'none';
   }
 };
 
